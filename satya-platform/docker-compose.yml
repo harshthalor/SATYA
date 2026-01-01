@@ -1,0 +1,92 @@
+version: '3.8'
+
+services:
+  # Client Voter (Next.js)
+  client-voter:
+    build:
+      context: ./client-voter
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - NEXT_PUBLIC_API_URL=http://server-core:8000
+    volumes:
+      - ./client-voter:/app
+      - /app/node_modules
+    depends_on:
+      - server-core
+
+  # Client Admin (React/Tailwind)
+  client-admin:
+    build:
+      context: ./client-admin
+      dockerfile: Dockerfile
+    ports:
+      - "3001:3000"
+    environment:
+      - NODE_ENV=development
+      - REACT_APP_API_URL=http://server-core:8000
+    volumes:
+      - ./client-admin:/app
+      - /app/node_modules
+    depends_on:
+      - server-core
+
+  # Server Core (API Gateway)
+  server-core:
+    build:
+      context: ./server-core
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - NODE_ENV=development
+      - AI_AUTH_SERVICE_URL=http://ai-auth-service:8001
+      - BLOCKCHAIN_NETWORK_URL=http://blockchain-network:7054
+    volumes:
+      - ./server-core:/app
+    depends_on:
+      - ai-auth-service
+      - blockchain-network
+
+  # AI Auth Service (Python/FastAPI)
+  ai-auth-service:
+    build:
+      context: ./ai-auth-service
+      dockerfile: Dockerfile
+    ports:
+      - "8001:8001"
+    environment:
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./ai-auth-service:/app
+      - ./ai-auth-service/models:/app/models
+    # GPU support (uncomment if needed)
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: 1
+    #           capabilities: [gpu]
+
+  # Blockchain Network (Hyperledger Fabric)
+  blockchain-network:
+    build:
+      context: ./blockchain-network
+      dockerfile: Dockerfile
+    ports:
+      - "7054:7054"  # Peer port
+      - "7051:7051"  # Orderer port
+      - "8080:8080"  # CouchDB
+    environment:
+      - FABRIC_LOGGING_SPEC=INFO
+    volumes:
+      - ./blockchain-network/chaincode:/opt/gopath/src/chaincode
+      - ./blockchain-network/network:/network
+
+networks:
+  default:
+    name: satya-platform-network
+
