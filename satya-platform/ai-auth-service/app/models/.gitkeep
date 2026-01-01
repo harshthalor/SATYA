@@ -1,0 +1,6 @@
+# Pre-trained .h5 or .pb files (FaceNet)
+# Place your FaceNet model files here:
+# - facenet_keras.h5
+# - facenet.pb
+# - or other pre-trained model files
+
