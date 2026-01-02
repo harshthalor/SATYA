@@ -2,14 +2,13 @@ import { Router } from 'express';
 import pool from '../config/db';
 import jwt from 'jsonwebtoken';
 import axios from 'axios';
+import FormData from 'form-data'; // Make sure you installed this: npm install form-data
 
 const router = Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'satya_super_secret_key';
+// Use 127.0.0.1 to avoid Docker localhost issues
+const AI_URL = process.env.AI_SERVICE_URL || 'http://127.0.0.1:8000/api/v1/auth/scan';
 
-// Correctly points to Member C (Port 8000)
-const AI_URL = process.env.AI_SERVICE_URL || 'http://localhost:8000/api/v1/auth/scan';
-
-// POST /api/v1/auth/verify
 router.post('/verify', async (req, res) => {
   try {
     const { imageBase64 } = req.body;
@@ -18,22 +17,39 @@ router.post('/verify', async (req, res) => {
       return res.status(400).json({ message: "No image provided" });
     }
 
-    console.log(`\n📸 Received Face Scan. Contacting AI Service at: ${AI_URL}...`);
+    // 1. LOGGING: Watch for this specific message to know the new code is running!
+    console.log(`\n📸 Received Face Scan. Converting to File...`);
+
+    // 2. CONVERT JSON TO FILE (Fixes the 422 Error)
+    const form = new FormData();
+    const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, "");
+    const imageBuffer = Buffer.from(base64Data, 'base64');
+    
+    // The name 'file' matches Member C's Python code: file=File(...)
+    form.append('file', imageBuffer, { filename: 'scan.jpg' });
+
+    console.log(`📡 Sending File to AI Service at: ${AI_URL}...`);
 
     let aiResponse;
     try {
-      // 1. Send Image to Member C (AI)
-      aiResponse = await axios.post(AI_URL, { image: imageBase64 });
-    } catch (error) {
-      console.error("❌ Failed to contact AI Service. Is Member C running on Port 8000?");
+      // 3. SEND AS FORM DATA
+      aiResponse = await axios.post(AI_URL, form, {
+        headers: { ...form.getHeaders() },
+        maxContentLength: Infinity,
+        maxBodyLength: Infinity
+      });
+    } catch (error: any) {
+      console.error("❌ AI Service Error:", error.message);
+      if (error.response) {
+        console.error("🔍 Python Response Data:", error.response.data);
+      }
       return res.status(503).json({ message: "AI Service Unavailable" });
     }
 
-    // 2. Translate Member C's Response
+    // 4. HANDLE RESPONSE
     console.log("🤖 AI Response:", aiResponse.data);
     const { status, message, voter_hash } = aiResponse.data;
 
-    // Check if Member C said "success" (accepts 'verified', 'success', or true)
     const isSuccess = status === 'success' || status === 'verified' || status === true;
 
     if (!isSuccess) {
@@ -43,7 +59,7 @@ router.post('/verify', async (req, res) => {
 
     console.log(`✅ AI Confirmed. Looking up Voter Hash: ${voter_hash}`);
 
-    // 3. Find Voter in DB
+    // 5. DATABASE CHECK
     const result = await pool.query(
       'SELECT * FROM voters WHERE biometric_hash = $1',
       [voter_hash]
@@ -55,17 +71,12 @@ router.post('/verify', async (req, res) => {
       return res.status(404).json({ message: "Voter verified by AI, but not found in DB" });
     }
 
-    // 4. Check if already voted
     if (voter.has_voted) {
       return res.status(403).json({ message: "⚠️ You have already voted!" });
     }
 
-    // 5. Create "VIP Badge" (Token)
     const token = jwt.sign(
-      { 
-        id: voter.id, 
-        constituency_id: voter.home_constituency_id 
-      },
+      { id: voter.id, constituency_id: voter.home_constituency_id },
       JWT_SECRET,
       { expiresIn: '1h' }
     );
@@ -75,10 +86,7 @@ router.post('/verify', async (req, res) => {
     res.json({
       success: true,
       token: token,
-      user: {
-        name: voter.full_name,
-        epic_id: voter.epic_id
-      }
+      user: { name: voter.full_name, epic_id: voter.epic_id }
     });
 
   } catch (err) {
