@@ -1,0 +1,11 @@
+{
+  "compilerOptions": {
+    /* Modules */
+    "module": "commonjs",                  // <--- Make sure this is commonjs
+    "moduleResolution": "node",            // <--- standard node resolution
+    "verbatimModuleSyntax": false,         // <--- CHANGE THIS TO FALSE (or delete line)
+    "esModuleInterop": true,               // <--- Ensure this is true
+    
+    // ... keep your other settings ...
+  }
+}
