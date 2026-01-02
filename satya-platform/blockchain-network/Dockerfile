@@ -12,3 +12,4 @@ EXPOSE 7051 7054 8080
 # Default command (override in docker-compose or provide startup script)
 CMD ["peer", "node", "start"]
 
+

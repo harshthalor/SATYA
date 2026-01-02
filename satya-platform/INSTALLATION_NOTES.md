@@ -50,3 +50,4 @@ pip install -r requirements.txt
 2. For production: Set up Python 3.11/3.12 environment for ai-auth-service
 3. TensorFlow models: Install when ready to use FaceNet models (requires Python 3.11)
 
+
