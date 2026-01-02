@@ -1,2 +1,0 @@
-# AI Auth Service Package
-
