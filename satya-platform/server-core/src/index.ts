@@ -8,7 +8,7 @@ import ballotRoutes from './routes/ballotRoutes';
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 8000;
+const PORT = process.env.PORT || 8080;
 
 // Middleware (Security & Utilities)
 app.use(cors());                 // Allows Member A (React) to talk to this server
