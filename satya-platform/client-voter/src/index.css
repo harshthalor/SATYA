@@ -1,0 +1,8 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --satya-blue: #1e3a8a;
+  --satya-orange: #f97316;
+}
