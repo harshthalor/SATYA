@@ -3,7 +3,7 @@
  * Component: API Gateway (server.js)
  * Purpose: The Bridge between the Web and the Blockchain.
  */
-
+console.log("🚨🚨🚨 I AM THE CORRECT FILE 🚨🚨🚨");
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
@@ -38,7 +38,7 @@ async function getContract() {
     const gateway = new Gateway();
     await gateway.connect(ccp, {
         wallet,
-        identity: 'appUserV2', // The user we created earlier
+        identity: 'appUserV4', // The user we created earlier
         discovery: { enabled: true, asLocalhost: true } ,// Crucial for Docker/Colima
         asLocalhost: true
     });
@@ -55,7 +55,7 @@ async function getContract() {
 app.get('/query/:key', async (req, res) => {
     try {
         const { contract, gateway } = await getContract();
-        const result = await contract.evaluateTransaction('ReadAsset', req.params.key);
+        const result = await contract.evaluateTransaction('ReadVoter', req.params.key);
         
         console.log(`Transaction has been evaluated, result is: ${result.toString()}`);
         res.status(200).json({ response: result.toString() });
@@ -145,6 +145,32 @@ app.post('/create-voter', async (req, res) => {
     } catch (error) {
         console.error(`Failed to register voter: ${error}`);
         res.status(500).json({ success: false, error: error.message });
+    }
+});
+// --- API ENDPOINT 4: READ ALL ASSETS (FOR RESULTS) ---
+// Usage: GET http://localhost:3000/query-all
+app.get('/query-all', async (req, res) => {
+    try {
+        const { contract, gateway } = await getContract();
+        
+        console.log("📊 Fetching all ledger data for tallying...");
+        
+        // This calls the standard Fabric function to get every single asset
+        const result = await contract.evaluateTransaction('GetAllAssets');
+        
+        console.log(`Data fetched successfully.`);
+        
+        res.status(200).json({ 
+            success: true, 
+            data: JSON.parse(result.toString()) 
+        });
+        
+        await gateway.disconnect();
+        
+    } catch (error) {
+        console.error(`Failed to fetch all assets: ${error}`);
+        // If 'GetAllAssets' doesn't exist in your chaincode, this will print the specific error
+        res.status(500).json({ error: error.message });
     }
 });
 

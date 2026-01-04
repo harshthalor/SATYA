@@ -20,6 +20,28 @@ class VoterContract extends Contract {
             console.info(`Asset ${voter.voterID} initialized`);
         }
     }
+    // --- NEW FUNCTION: GET ALL ASSETS (Required for Results) ---
+    // Returns all voters and ballots stored in the world state
+    async GetAllAssets(ctx) {
+        const allResults = [];
+        // empty string startKey and endKey = fetch everything
+        const iterator = await ctx.stub.getStateByRange('', '');
+        let result = await iterator.next();
+        
+        while (!result.done) {
+            const strValue = Buffer.from(result.value.value.toString()).toString('utf8');
+            let record;
+            try {
+                record = JSON.parse(strValue);
+            } catch (err) {
+                console.log(err);
+                record = strValue;
+            }
+            allResults.push({ Key: result.value.key, Record: record });
+            result = await iterator.next();
+        }
+        return JSON.stringify(allResults);
+    }
 
     // CreateVoter adds a new voter to the world state with given details.
     async CreateVoter(ctx, voterID, biometricHash, homeState) {

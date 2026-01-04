@@ -47,4 +47,17 @@ ai-auth-service/models/*.h5
 ai-auth-service/models/*.pth
 ai-auth-service/models/*.pb
 
+# --- HYPERLEDGER FABRIC (Crucial Security) ---
+# Ignore the Identity Wallet in server-core (Contains Private Keys!)
+wallet/
+server-core/wallet/
 
+# Ignore Network Crypto Material (Generated Certs)
+organizations/
+test-network/organizations/
+test-network/system-genesis-block/
+test-network/channel-artifacts/
+
+# Ignore Chaincode Packages
+*.tar.gz
+server-core/connection-org1.json

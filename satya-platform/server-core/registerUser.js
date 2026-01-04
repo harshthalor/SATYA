@@ -14,16 +14,16 @@ async function main() {
 
     // Register appUserV2 to solve Authentication errors
     const secret = await ca.register({
-        enrollmentID: 'appUserV2',
+        enrollmentID: 'appUserV4',
         enrollmentSecret: 'password123',
         role: 'client'
     }, adminUser);
 
-    const enrollment = await ca.enroll({ enrollmentID: 'appUserV2', enrollmentSecret: secret });
-    await wallet.put('appUserV2', {
+    const enrollment = await ca.enroll({ enrollmentID: 'appUserV4', enrollmentSecret: secret });
+    await wallet.put('appUserV4', {
         credentials: { certificate: enrollment.certificate, privateKey: enrollment.key.toBytes() },
         mspId: 'Org1MSP', type: 'X.509'
     });
-    console.log('✅ appUserV2 ready for Phase 3');
+    console.log('✅ appUserV4 ready for Phase 3');
 }
 main();

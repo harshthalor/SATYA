@@ -24,7 +24,7 @@ async function main() {
         // 3. Connect to the Wallet
         const walletPath = path.join(process.cwd(), 'wallet');
         const wallet = await Wallets.newFileSystemWallet(walletPath);
-        const identity = await wallet.get('appUserV2'); // Ensure you have an admin/user enrolled
+        const identity = await wallet.get('appUserV3'); // Ensure you have an admin/user enrolled
 
         if (!identity) {
             console.log('❌ Error: "appUser" identity not found in wallet. Run enrollUser.js first.');
@@ -35,7 +35,7 @@ async function main() {
         const gateway = new Gateway();
         await gateway.connect(ccp, {
             wallet,
-            identity: 'appUserV2',
+            identity: 'appUserV3',
             discovery: { enabled: true, asLocalhost: true } 
         });
 
