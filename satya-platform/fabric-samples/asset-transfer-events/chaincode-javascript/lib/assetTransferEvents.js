@@ -1,128 +1,110 @@
 /*
- * Copyright IBM Corp. All Rights Reserved.
- *
- * SPDX-License-Identifier: Apache-2.0
+ * SATYA: Secure E-Voting Smart Contract
+ * (Replacing AssetTransferEvents for the Demo)
  */
 
 'use strict';
 
 const { Contract } = require('fabric-contract-api');
 
-async function savePrivateData(ctx, assetKey) {
-	const clientOrg = ctx.clientIdentity.getMSPID();
-	const peerOrg = ctx.stub.getMspID();
-	const collection = '_implicit_org_' + peerOrg;
+class VoterContract extends Contract {
 
-	if (clientOrg === peerOrg) {
-		const transientMap = ctx.stub.getTransient();
-		if (transientMap) {
-			const properties = transientMap.get('asset_properties');
-			if (properties) {
-				await ctx.stub.putPrivateData(collection, assetKey, properties);
-			}
-		}
-	}
+    // 1. Initialize Ledger with Dummy Data
+    async InitLedger(ctx) {
+        const voters = [
+            {
+                voterID: 'V001',
+                biometricHash: 'dummy_hash_123',
+                homeState: 'Delhi',
+                currentStatus: 'ACTIVE',
+                hasVoted: false,
+                docType: 'voter'
+            }
+        ];
+
+        for (const voter of voters) {
+            await ctx.stub.putState(voter.voterID, Buffer.from(JSON.stringify(voter)));
+            console.info(`Asset ${voter.voterID} initialized`);
+        }
+    }
+
+    // 2. Get All Assets (CRITICAL FOR RESULTS DASHBOARD)
+    async GetAllAssets(ctx) {
+        const allResults = [];
+        const iterator = await ctx.stub.getStateByRange('', '');
+        let result = await iterator.next();
+        
+        while (!result.done) {
+            const strValue = Buffer.from(result.value.value.toString()).toString('utf8');
+            let record;
+            try {
+                record = JSON.parse(strValue);
+            } catch (err) {
+                console.log(err);
+                record = strValue;
+            }
+            allResults.push({ Key: result.value.key, Record: record });
+            result = await iterator.next();
+        }
+        return JSON.stringify(allResults);
+    }
+
+    // 3. Create Voter
+    async CreateVoter(ctx, voterID, biometricHash, homeState) {
+        const voter = {
+            voterID: voterID,
+            biometricHash: biometricHash,
+            homeState: homeState,
+            currentStatus: 'ACTIVE',
+            hasVoted: false,
+            docType: 'voter'
+        };
+        await ctx.stub.putState(voterID, Buffer.from(JSON.stringify(voter)));
+        return JSON.stringify(voter);
+    }
+
+    // 4. Read Voter
+    async ReadVoter(ctx, voterID) {
+        const voterJSON = await ctx.stub.getState(voterID);
+        if (!voterJSON || voterJSON.length === 0) {
+            throw new Error(`The voter ${voterID} does not exist`);
+        }
+        return voterJSON.toString();
+    }
+
+    // 5. Cast Vote
+    async CastVote(ctx, voterID, candidateID, candidateState, boothLocation) {
+        const voterJSON = await ctx.stub.getState(voterID);
+        if (!voterJSON || voterJSON.length === 0) {
+            throw new Error(`Voter ${voterID} is not registered.`);
+        }
+
+        const voter = JSON.parse(voterJSON.toString());
+
+        if (voter.hasVoted) {
+            throw new Error(`Security Violation: Voter ${voterID} has already cast a vote.`);
+        }
+
+        if (voter.homeState !== candidateState) {
+            throw new Error(`Invalid Ballot: Voter from ${voter.homeState} cannot vote for ${candidateState}.`);
+        }
+
+        const voteRecord = {
+            candidateID: candidateID,
+            homeState: voter.homeState, 
+            castAt: boothLocation,      
+            timestamp: ctx.stub.getTxTimestamp().seconds.low.toString(),
+            docType: 'ballot'
+        };
+
+        voter.hasVoted = true;
+        await ctx.stub.putState(voterID, Buffer.from(JSON.stringify(voter)));
+        
+        const txId = ctx.stub.getTxID(); 
+        await ctx.stub.putState(`BALLOT_${txId}`, Buffer.from(JSON.stringify(voteRecord)));
+
+        return txId;
+    }
 }
 
-async function removePrivateData(ctx, assetKey) {
-	const clientOrg = ctx.clientIdentity.getMSPID();
-	const peerOrg = ctx.stub.getMspID();
-	const collection = '_implicit_org_' + peerOrg;
-
-	if (clientOrg === peerOrg) {
-		const propertiesBuffer = await ctx.stub.getPrivateData(collection, assetKey);
-		if (propertiesBuffer && propertiesBuffer.length > 0) {
-			await ctx.stub.deletePrivateData(collection, assetKey);
-		}
-	}
-}
-
-async function addPrivateData(ctx, assetKey, asset) {
-	const clientOrg = ctx.clientIdentity.getMSPID();
-	const peerOrg = ctx.stub.getMspID();
-	const collection = '_implicit_org_' + peerOrg;
-
-	if (clientOrg === peerOrg) {
-		const propertiesBuffer = await ctx.stub.getPrivateData(collection, assetKey);
-		if (propertiesBuffer && propertiesBuffer.length > 0) {
-			const properties = JSON.parse(propertiesBuffer.toString());
-			asset.asset_properties = properties;
-		}
-	}
-}
-
-async function readState(ctx, id) {
-	const assetBuffer = await ctx.stub.getState(id); // get the asset from chaincode state
-	if (!assetBuffer || assetBuffer.length === 0) {
-		throw new Error(`The asset ${id} does not exist`);
-	}
-	const assetString = assetBuffer.toString();
-	const asset = JSON.parse(assetString);
-
-	return asset;
-}
-
-class AssetTransferEvents extends Contract {
-
-	// CreateAsset issues a new asset to the world state with given details.
-	async CreateAsset(ctx, id, color, size, owner, appraisedValue) {
-		const asset = {
-			ID: id,
-			Color: color,
-			Size: size,
-			Owner: owner,
-			AppraisedValue: appraisedValue,
-		};
-		await savePrivateData(ctx, id);
-		const assetBuffer = Buffer.from(JSON.stringify(asset));
-
-		ctx.stub.setEvent('CreateAsset', assetBuffer);
-		return ctx.stub.putState(id, assetBuffer);
-	}
-
-	// TransferAsset updates the owner field of an asset with the given id in
-	// the world state.
-	async TransferAsset(ctx, id, newOwner) {
-		const asset = await readState(ctx, id);
-		asset.Owner = newOwner;
-		const assetBuffer = Buffer.from(JSON.stringify(asset));
-		await savePrivateData(ctx, id);
-
-		ctx.stub.setEvent('TransferAsset', assetBuffer);
-		return ctx.stub.putState(id, assetBuffer);
-	}
-
-	// ReadAsset returns the asset stored in the world state with given id.
-	async ReadAsset(ctx, id) {
-		const asset = await readState(ctx, id);
-		await addPrivateData(ctx, asset.ID, asset);
-
-		return JSON.stringify(asset);
-	}
-
-	// UpdateAsset updates an existing asset in the world state with provided parameters.
-	async UpdateAsset(ctx, id, color, size, owner, appraisedValue) {
-		const asset = await readState(ctx, id);
-		asset.Color = color;
-		asset.Size = size;
-		asset.Owner = owner;
-		asset.AppraisedValue = appraisedValue;
-		const assetBuffer = Buffer.from(JSON.stringify(asset));
-		await savePrivateData(ctx, id);
-
-		ctx.stub.setEvent('UpdateAsset', assetBuffer);
-		return ctx.stub.putState(id, assetBuffer);
-	}
-
-	// DeleteAsset deletes an given asset from the world state.
-	async DeleteAsset(ctx, id) {
-		const asset = await readState(ctx, id);
-		const assetBuffer = Buffer.from(JSON.stringify(asset));
-		await removePrivateData(ctx, id);
-
-		ctx.stub.setEvent('DeleteAsset', assetBuffer);
-		return ctx.stub.deleteState(id);
-	}
-}
-
-module.exports = AssetTransferEvents;
+module.exports = VoterContract;

@@ -6,7 +6,7 @@
 
 'use strict';
 
-const assetTransferEvents = require('./lib/assetTransferEvents');
+const VoterContract = require('./lib/assetTransferEvents');
 
-module.exports.AssetTransferEvents = assetTransferEvents;
-module.exports.contracts = [assetTransferEvents];
+module.exports.VoterContract = VoterContract;
+module.exports.contracts = [ VoterContract ];

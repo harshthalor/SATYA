@@ -13,10 +13,38 @@ async function main() {
         const walletPath = path.join(process.cwd(), 'wallet');
         const wallet = await Wallets.newFileSystemWallet(walletPath);
 
-        // We skip registration and go straight to ENROLLMENT
-        const enrollment = await ca.enroll({ 
-            enrollmentID: 'appUser', 
-            enrollmentSecret: 'user1pw' // This matches the secret from your earlier CA logs
+        // 1. Check if we already have the user (don't repeat if they exist)
+        const userIdentity = await wallet.get('appUser');
+        if (userIdentity) {
+            console.log('✅ appUser already exists in the wallet.');
+            return;
+        }
+
+        // 2. Check if we have the admin to perform registration
+        const adminIdentity = await wallet.get('admin');
+        if (!adminIdentity) {
+            console.log('❌ Admin not found! Run enrollAdmin.js first.');
+            return;
+        }
+        const newID = 'appUserV3'; // Change this from 'appUser' to 'appUserV3'
+        // 3. Build a user object for the admin to interact with the CA
+        
+        const provider = wallet.getProviderRegistry().getProvider(adminIdentity.type);
+        const adminUser = await provider.getUserContext(adminIdentity, 'admin');
+
+        // 4. REGISTER the user (This generates the secret)
+        console.log('Registering appUser...');
+        const secret = await ca.register({
+            affiliation: 'org1.department1',
+            enrollmentID: 'newId',
+            role: 'client'
+        }, adminUser);
+
+        // 5. ENROLL the user using the secret we just got
+        console.log('Enrolling appUserV3...');
+        const enrollment = await ca.enroll({
+            enrollmentID: 'newId',
+            enrollmentSecret: secret
         });
 
         const x509Identity = {
@@ -28,11 +56,11 @@ async function main() {
             type: 'X.509',
         };
 
-        await wallet.put('appUser', x509Identity);
-        console.log('✅ Success: appUser certificates recovered and added to wallet');
+        await wallet.put(newID, x509Identity);
+        console.log('✅ Success: appUserV3 registered and enrolled successfully');
 
     } catch (error) {
-        console.error(`❌ Error re-enrolling user: ${error}`);
+        console.error(`❌ Error: ${error}`);
     }
 }
 main();

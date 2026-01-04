@@ -4,6 +4,8 @@ import dotenv from 'dotenv';
 import pool from './config/db';
 import authRoutes from './routes/authRoutes';
 import ballotRoutes from './routes/ballotRoutes';
+import adminRoutes from './routes/adminRoutes';
+import resultRoutes from './routes/resultRoutes';
 
 dotenv.config();
 
@@ -15,6 +17,8 @@ app.use(cors());                 // Allows Member A (React) to talk to this serv
 app.use(express.json({ limit: '50mb' }));        // Parses incoming JSON data
 app.use('/api/v1/auth', authRoutes);       // Auth Routes (Face Verification)
 app.use('/api/v1/ballot', ballotRoutes);   // Ballot Routes (Fetch Candidates)
+app.use('/api/v1/admin', adminRoutes); // Admin Panel access
+app.use('/api/v1/results', resultRoutes);
 
 // Route 1: Health Check (To prove server is alive)
 app.get('/', (req, res) => {
