@@ -5,7 +5,8 @@ import axios from 'axios';
 import { ensureFaceSetExists, searchFace } from '../utils/facepp'; // Import new helper
 
 const router = Router();
-const JWT_SECRET = process.env.JWT_SECRET || 'satya_super_secret_key';
+const JWT_SECRET = process.env.JWT_SECRET ;
+if (!JWT_SECRET) throw new Error("Missing JWT_SECRET in .env");
 const LEDGER_QUERY_URL = 'http://localhost:3000/query';
 
 router.post('/scan', async (req: any, res: any) => {
