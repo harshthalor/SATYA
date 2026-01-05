@@ -61,3 +61,31 @@ test-network/channel-artifacts/
 # Ignore Chaincode Packages
 *.tar.gz
 server-core/connection-org1.json
+
+# --- HYPERLEDGER FABRIC (Crucial Security) ---
+wallet/
+*/wallet/               # Ignores wallet in ANY subfolder
+keystore/
+*.pem
+*.priv
+organizations/
+test-network/
+
+# --- CONNECTION PROFILES ---
+# Block this filename wherever it appears in the project
+connection-org1.json
+**/connection-org1.json
+connection-profile.json
+**/connection-profile.json
+
+# --- ENVIRONMENT ---
+.env
+.env.*
+!.env.example  # Do NOT ignore the example file (we want this public)
+
+# --- SYSTEM & LOGS ---
+.DS_Store
+node_modules/
+dist/
+build/
+*.log

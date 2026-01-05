@@ -6,13 +6,14 @@ dotenv.config();
 // ☢️ NUCLEAR FIX: Ignore certificate errors ☢️
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
-// --- ⚡️ THE CORRECT CONNECTION STRING ⚡️ ---
-// Host: aws-1-ap-south-1 (Correct!)
-// Port: 5432 (Session Mode - Works perfectly with Node.js)
-const CONNECTION_STRING = "postgresql://postgres.wlyzqqsnbqyhrxuaxeav:SatyaSuccess2026@aws-1-ap-south-1.pooler.supabase.com:5432/postgres";
+// --- ⚡️ SECURE CONNECTION ⚡️ ---
+// NEVER hardcode the connection string in public code.
+if (!process.env.DATABASE_URL) {
+  throw new Error("🚨 DATABASE_URL is missing in .env file");
+}
 
 const pool = new Pool({
-  connectionString: CONNECTION_STRING,
+  connectionString: process.env.DATABASE_URL,
   max: 10,
   idleTimeoutMillis: 30000
 });
