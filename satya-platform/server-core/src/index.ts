@@ -15,6 +15,7 @@ const PORT = process.env.PORT || 8080;
 // Middleware (Security & Utilities)
 app.use(cors());                 // Allows Member A (React) to talk to this server
 app.use(express.json({ limit: '50mb' }));        // Parses incoming JSON data
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use('/api/v1/auth', authRoutes);       // Auth Routes (Face Verification)
 app.use('/api/v1/ballot', ballotRoutes);   // Ballot Routes (Fetch Candidates)
 app.use('/api/v1/admin', adminRoutes); // Admin Panel access

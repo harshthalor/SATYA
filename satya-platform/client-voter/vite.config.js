@@ -1,19 +1,17 @@
-// client-voter/vite.config.js
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
 
-// 1. ADD THIS LINE AT THE TOP:
-import { defineConfig } from 'vite'; 
-
-import react from '@vitejs/plugin-react';
-
+// https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
   server: {
     proxy: {
+      // 🛑 CHANGE THIS: Point to Node.js (8080), NOT Python (8000)
       '/api': {
-        target: 'http://localhost:8000',
+        target: 'http://localhost:8080', 
         changeOrigin: true,
-        // No rewrite needed if backend expects /api/v1/auth/scan
+        secure: false,
       },
     },
   },
-});
+})

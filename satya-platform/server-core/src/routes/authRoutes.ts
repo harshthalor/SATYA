@@ -2,92 +2,56 @@ import { Router } from 'express';
 import pool from '../config/db';
 import jwt from 'jsonwebtoken';
 import axios from 'axios';
-import FormData from 'form-data';
+import { ensureFaceSetExists, searchFace } from '../utils/facepp'; // Import new helper
 
 const router = Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'satya_super_secret_key';
-const AI_URL = process.env.AI_SERVICE_URL || 'http://127.0.0.1:8000/api/v1/auth/scan';
+const LEDGER_QUERY_URL = 'http://localhost:3000/query';
 
-// ✅ NEW: Add the Blockchain Gateway URL
-const LEDGER_QUERY_URL = 'http://127.0.0.1:3000/query'; 
-
-router.post('/scan', async (req: any, res: any) => { // Added :any to fix TS errors quickly
+router.post('/scan', async (req: any, res: any) => {
   try {
     const { imageBase64 } = req.body;
+    console.log(`\n📸 Received Login Request.`);
 
-    if (!imageBase64) {
-      return res.status(400).json({ message: "No image provided" });
+    await ensureFaceSetExists();
+    const cleanBase64 = imageBase64.replace(/^data:image\/\w+;base64,/, "");
+
+    // 1. SEARCH FACE
+    const searchResult = await searchFace(cleanBase64);
+
+    if (!searchResult || !searchResult.matchFound) {
+        console.log("⛔ Face not recognized.");
+        return res.status(401).json({ message: "Face not recognized. Please register first." });
     }
 
-    console.log(`\n📸 Received Face Scan. Processing...`);
+    // Success! searchResult.userId is the EPIC ID we saved earlier
+    const recognizedEpicId = searchResult.userId;
+    console.log(`✅ Identified User: ${recognizedEpicId}`);
 
-    // 1. CALL AI SERVICE (Your existing working code)
-    const form = new FormData();
-    const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, "");
-    const imageBuffer = Buffer.from(base64Data, 'base64');
-    form.append('file', imageBuffer, { filename: 'scan.jpg' });
-
-    let aiResponse;
+    // 2. CHECK BLOCKCHAIN
     try {
-      aiResponse = await axios.post(AI_URL, form, {
-        headers: { ...form.getHeaders() },
-        maxContentLength: Infinity,
-        maxBodyLength: Infinity
-      });
-    } catch (error: any) {
-      console.error("❌ AI Service Error:", error.message);
-      return res.status(503).json({ message: "AI Service Unavailable" });
-    }
-
-    const { status, message, voter_hash } = aiResponse.data;
-    const isSuccess = status === 'success' || status === 'verified' || status === true;
-
-    if (!isSuccess) {
-      console.log(`⛔ AI Rejected: ${message}`);
-      return res.status(401).json({ message: message || "Face verification failed" });
-    }
-
-    console.log(`✅ AI Confirmed. Hash: ${voter_hash.substring(0, 10)}...`);
-
-    // ============================================================
-    // 🚨 NEW STEP: CHECK BLOCKCHAIN LEDGER (The "Satya" Check)
-    // ============================================================
-    console.log(`🔗 Verifying status on Blockchain...`);
-    let ledgerData;
-    try {
-        // We ask the Ledger: "What is the TRUE status of this hash?"
-        const ledgerRes = await axios.get(`${LEDGER_QUERY_URL}/${voter_hash}`);
-        
-        // Parse the response (Gateway returns JSON string inside "response" key)
+        const ledgerRes = await axios.get(`${LEDGER_QUERY_URL}/${recognizedEpicId}`);
         const rawData = ledgerRes.data.response || ledgerRes.data; 
-        ledgerData = typeof rawData === 'string' ? JSON.parse(rawData) : rawData;
+        const ledgerData = typeof rawData === 'string' ? JSON.parse(rawData) : rawData;
 
-        // CRITICAL SECURITY CHECK
         if (ledgerData.hasVoted === true) {
              return res.status(403).json({ message: "⛔ SECURITY ALERT: Blockchain says you have already voted!" });
         }
     } catch (bcError) {
-        // If 404, it means they aren't on the chain yet
-        console.error("❌ Blockchain Verification Failed.");
-        return res.status(401).json({ message: "Login Failed: Identity not found on Ledger." });
+        return res.status(401).json({ message: "Identity not found on Blockchain." });
     }
 
-    // 2. DATABASE CHECK (Only needed to get the Name/Constituency ID)
-    const result = await pool.query('SELECT * FROM voters WHERE biometric_hash = $1', [voter_hash]);
+    // 3. DB LOOKUP & TOKEN
+    const result = await pool.query('SELECT * FROM voters WHERE epic_id = $1', [recognizedEpicId]);
     const voter = result.rows[0];
 
-    if (!voter) {
-      return res.status(404).json({ message: "Voter verified on Ledger, but missing in DB." });
-    }
+    if (!voter) return res.status(404).json({ message: "User missing in DB." });
 
-    // 3. GENERATE TOKEN (Now confirmed safe by Blockchain)
     const token = jwt.sign(
-      { id: voter.id, constituency_id: voter.home_constituency_id },
+      { id: voter.id, epic_id: voter.epic_id, constituency_id: voter.home_constituency_id },
       JWT_SECRET,
       { expiresIn: '1h' }
     );
-
-    console.log(`🎉 Login Success: ${voter.full_name}`);
 
     res.json({
       success: true,
@@ -95,8 +59,8 @@ router.post('/scan', async (req: any, res: any) => { // Added :any to fix TS err
       user: { name: voter.full_name, epic_id: voter.epic_id }
     });
 
-  } catch (err) {
-    console.error("Auth Error:", err);
+  } catch (err: any) {
+    console.error("Auth Error:", err.message);
     res.status(500).json({ message: "Internal Server Error" });
   }
 });

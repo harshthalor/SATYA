@@ -5,11 +5,9 @@ import axios from 'axios';
 
 const router = Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'satya_super_secret_key';
+const LEDGER_URL = 'http://localhost:3000/cast-vote';
 
-// ✅ THE LEDGER URL: Points to the Blockchain Gateway running on Port 3000
-const LEDGER_URL = process.env.LEDGER_SERVICE_URL || 'http://127.0.0.1:3000/cast-vote';
-
-// --- AUTH MIDDLEWARE ---
+// --- MIDDLEWARE ---
 const authenticateToken = (req: any, res: any, next: any) => {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
@@ -23,7 +21,7 @@ const authenticateToken = (req: any, res: any, next: any) => {
   });
 };
 
-// --- ROUTE 1: FETCH BALLOT ---
+// --- FETCH BALLOT ---
 router.get('/', authenticateToken, async (req: any, res: any) => {
   try {
     const constituencyId = req.user.constituency_id;
@@ -44,42 +42,45 @@ router.get('/', authenticateToken, async (req: any, res: any) => {
   }
 });
 
-// Add this route to your existing src/routes/voteRoutes.ts
+// --- CAST VOTE ---
 router.post('/cast', authenticateToken, async (req: any, res: any) => {
   try {
     const { candidate_id } = req.body;
-    const user = req.user; 
+    const user = req.user; // Contains { id, epic_id, constituency_id }
 
-    // 1. Fetch the Biometric Hash (The ID recognized by the Ledger)
+    console.log(`\n🗳️ Vote Request from: ${user.epic_id}`);
+
+    // 1. Double Check DB Status
     const voterData = await pool.query(
-      'SELECT has_voted, biometric_hash FROM voters WHERE id = $1', 
+      'SELECT has_voted FROM voters WHERE id = $1', 
       [user.id]
     );
 
     if (voterData.rows.length === 0) return res.status(404).json({ message: "Voter not found" });
     if (voterData.rows[0].has_voted) return res.status(403).json({ message: "Access Denied: Already Voted" });
 
-    const voterHash = voterData.rows[0].biometric_hash;
-
-    // 2. Forward to the Ledger Gateway
-    console.log(`🔗 Forwarding to Ledger for hash: ${voterHash.substring(0, 10)}...`);
+    // 2. Forward to Ledger
+    // We use the EPIC ID from the token as the 'voterId' on the chain
+    console.log(`🔗 Submitting to Blockchain...`);
 
     let ledgerResponse;
     try {
       ledgerResponse = await axios.post(LEDGER_URL, {
-        voterId: voterHash,       // 👈 CHANGED: Use Hash instead of ID "1"
+        voterId: user.epic_id, // 👈 CORRECT: Using EPIC ID
         candidateId: candidate_id,
-        candidateState: "Bihar",  // 👈 CHANGED: Use "Bihar" to match your register_face.js
-        district: "Patna"
+        candidateState: "Delhi", // Or fetch dynamically from user.constituency
+        district: "Delhi-NCR"
       });
     } catch (error: any) {
-      console.error("❌ Ledger Error:", error.response?.data || error.message);
-      return res.status(503).json({ message: "Blockchain Ledger Rejected Vote" });
+      console.error("❌ Ledger Rejected Vote:", error.response?.data || error.message);
+      return res.status(503).json({ message: "Blockchain Transaction Failed" });
     }
 
-    // 3. Update Local Postgres
+    // 3. Mark Locally as Voted
     const txId = ledgerResponse.data.txId;
     await pool.query('UPDATE voters SET has_voted = true WHERE id = $1', [user.id]);
+
+    console.log(`✅ Vote Committed! TX: ${txId}`);
 
     res.json({
       success: true,
@@ -92,4 +93,5 @@ router.post('/cast', authenticateToken, async (req: any, res: any) => {
     res.status(500).json({ message: "Internal Server Error" });
   }
 });
+
 export default router;

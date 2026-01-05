@@ -1,94 +1,92 @@
-import React, { useRef, useState, useEffect, useCallback } from 'react';
+import React, { useRef, useState } from 'react';
 import Webcam from 'react-webcam';
-import { Shield, Camera, CheckCircle, AlertCircle } from 'lucide-react';
+import { ScanFace } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const Login = () => {
   const webcamRef = useRef(null);
-  const [status, setStatus] = useState('searching'); // searching, stable, blink, verifying, success
-  const [stableFrames, setStableFrames] = useState(0);
-  const REQUIRED_STABILITY = 10;
+  const navigate = useNavigate();
+  const [status, setStatus] = useState('idle'); // idle, verifying, success, error
+  const [log, setLog] = useState("Ready to verify identity.");
 
-  // The "Auto-Kiosk" Loop
-  useEffect(() => {
-    const interval = setInterval(() => {
-      if (status === 'searching' || status === 'stable') {
-        processFrame();
-      }
-    }, 200); // Check 5 times per second
-    return () => clearInterval(interval);
-  }, [status, stableFrames]);
+  const verifyIdentity = async () => {
+    if (!webcamRef.current) return;
+    const imageSrc = webcamRef.current.getScreenshot();
+    if (!imageSrc) return;
 
-  const processFrame = async () => {
-    const image = webcamRef.current?.getScreenshot();
-    if (!image) return;
+    setStatus('verifying');
+    setLog("🔐 Verifying with Face++ Cloud...");
 
-    // Send a low-res "pre-scan" to Member B to check for eyes
-    // This mimics the 'frames_stable' logic from your Python script
     try {
-      const blob = await (await fetch(image)).blob();
-      const formData = new FormData();
-      formData.append("file", blob);
+      const res = await fetch('/api/v1/auth/scan', { 
+        method: 'POST', 
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageBase64: imageSrc })
+      });
 
-      const res = await fetch('/api/v1/auth/scan', { method: 'POST', body: formData });
       const data = await res.json();
 
-      if (data.status === "success") {
-        // AI says "Blink Detected" (Eyes were closed in this frame)
-        if (status === 'stable') {
-          handleSuccess(data);
-        }
-      } else if (data.message.includes("Eyes are OPEN")) {
-        // User is looking, increment stability
-        setStableFrames(prev => prev + 1);
-        if (stableFrames >= REQUIRED_STABILITY) setStatus('stable');
+      if (res.ok) {
+        setStatus('success');
+        setLog(`✅ Welcome, ${data.user.name}!`);
+        // Save token for the Vote page
+        localStorage.setItem('token', data.token);
+        // Redirect to Vote page after 1.5s
+        setTimeout(() => navigate("/vote"), 1500); 
       } else {
-        // Lost face
-        setStableFrames(0);
-        setStatus('searching');
+        setStatus('error');
+        setLog(`⛔ ${data.message || "Verification Failed"}`);
+        setTimeout(() => setStatus('idle'), 3000);
       }
     } catch (e) {
-      console.error("Kiosk Error", e);
+      setStatus('error');
+      setLog("❌ Server Error. Try again.");
     }
   };
 
-  const handleSuccess = (data) => {
-    setStatus('success');
-    console.log("Voter Hash:", data.voter_hash);
-    setTimeout(() => window.location.href = "/vote", 1500);
-  };
-
   return (
-    <div className="flex flex-col items-center p-8 min-h-screen bg-slate-50">
+    <div className="flex flex-col items-center justify-center min-h-screen bg-slate-900 text-white p-6">
       <div className="text-center mb-8">
-        <h1 className="text-4xl font-black text-satya-blue tracking-tighter">SATYA TERMINAL</h1>
-        <p className="text-slate-400 font-mono text-xs uppercase mt-2">Biometric Identity Layer</p>
+        <h1 className="text-4xl font-black tracking-tighter text-blue-400">SATYA VOTER</h1>
+        <p className="text-slate-500 font-mono text-xs uppercase mt-2">Secure Voting Terminal</p>
       </div>
 
-      <div className="relative group">
-        {/* Visual feedback ring based on state */}
-        <div className={`absolute -inset-4 rounded-full blur-xl transition-all duration-500 opacity-30 ${
-          status === 'stable' ? 'bg-orange-400 animate-pulse' : 
-          status === 'success' ? 'bg-green-400' : 'bg-blue-400'
+      <div className="relative group rounded-full">
+        {/* Status Ring Animation */}
+        <div className={`absolute -inset-4 rounded-full blur-xl transition-all duration-500 opacity-40 ${
+          status === 'verifying' ? 'bg-blue-500 animate-pulse' : 
+          status === 'success' ? 'bg-green-500' : 
+          status === 'error' ? 'bg-red-500' : 'bg-slate-700'
         }`} />
         
-        <div className={`relative w-80 h-80 rounded-full overflow-hidden border-8 transition-all duration-500 ${
-          status === 'stable' ? 'border-satya-orange' : 
-          status === 'success' ? 'border-green-500' : 'border-satya-blue'
+        <div className={`relative w-72 h-72 rounded-full overflow-hidden border-4 transition-all duration-300 bg-black ${
+          status === 'success' ? 'border-green-500' : 
+          status === 'error' ? 'border-red-500' : 'border-slate-700'
         }`}>
-          <Webcam ref={webcamRef} screenshotFormat="image/jpeg" className="w-full h-full object-cover" />
+          <Webcam 
+            ref={webcamRef} 
+            screenshotFormat="image/jpeg" 
+            className="w-full h-full object-cover transform scale-x-[-1]"
+          />
         </div>
       </div>
 
-      <div className="mt-10 w-full max-w-xs text-center space-y-4">
-        <div className="py-3 px-6 rounded-2xl bg-white shadow-sm border border-slate-200">
-          {status === 'searching' && <p className="text-blue-600 font-bold animate-pulse">CENTER YOUR FACE</p>}
-          {status === 'stable' && <p className="text-satya-orange font-bold animate-bounce">⚡️ BLINK NOW ⚡️</p>}
-          {status === 'success' && <p className="text-green-600 font-bold flex items-center justify-center gap-2"><CheckCircle size={18}/> IDENTITY VERIFIED</p>}
+      <div className="mt-10 w-full max-w-sm text-center space-y-6">
+        <div className="py-4 px-6 rounded-2xl bg-slate-800 border border-slate-700 text-slate-300 font-mono text-sm">
+            {log}
         </div>
-        
-        <p className="text-xs text-slate-400 leading-relaxed px-4">
-          Stability: {Math.min(100, (stableFrames/REQUIRED_STABILITY)*100).toFixed(0)}%
-        </p>
+
+        <button 
+            onClick={verifyIdentity}
+            disabled={status === 'verifying' || status === 'success'}
+            className={`w-full py-4 rounded-xl font-bold text-lg flex items-center justify-center gap-2 shadow-lg transition-all active:scale-95 ${
+                status === 'verifying' ? 'bg-slate-600 cursor-wait' :
+                status === 'success' ? 'bg-green-600' :
+                'bg-blue-600 hover:bg-blue-500'
+            }`}
+        >
+            {status === 'verifying' ? "Scanning..." : <><ScanFace /> VERIFY ME</>}
+        </button>
       </div>
     </div>
   );

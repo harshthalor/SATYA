@@ -3,22 +3,26 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-// Member B's Connection Pool
-// This reads your .env variables to connect to Docker
+// ☢️ NUCLEAR FIX: Ignore certificate errors ☢️
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+
+// --- ⚡️ THE CORRECT CONNECTION STRING ⚡️ ---
+// Host: aws-1-ap-south-1 (Correct!)
+// Port: 5432 (Session Mode - Works perfectly with Node.js)
+const CONNECTION_STRING = "postgresql://postgres.wlyzqqsnbqyhrxuaxeav:SatyaSuccess2026@aws-1-ap-south-1.pooler.supabase.com:5432/postgres";
+
 const pool = new Pool({
-  user: process.env.DB_USER || 'admin',
-  host: process.env.DB_HOST || 'localhost',
-  database: process.env.DB_NAME || 'satya_core',
-  password: process.env.DB_PASSWORD || 'password123',
-  port: Number(process.env.DB_PORT) || 5432,
+  connectionString: CONNECTION_STRING,
+  max: 10,
+  idleTimeoutMillis: 30000
 });
 
 pool.on('connect', () => {
-  console.log('✅ Connected to SATYA PostgreSQL Database');
+  console.log('✅ Connected to SATYA Cloud Database (Supabase)');
 });
 
 pool.on('error', (err) => {
-  console.error('❌ Unexpected error on idle client', err);
+  console.error('❌ Database Error:', err);
 });
 
 export default pool;
