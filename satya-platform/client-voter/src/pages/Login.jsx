@@ -1,23 +1,21 @@
-import React, { useRef, useState } from 'react';
-import Webcam from 'react-webcam';
-import { ScanFace } from 'lucide-react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import FaceLivenessCam from '../components/FaceLivenessCam'; // Import the new component
 
 const Login = () => {
-  const webcamRef = useRef(null);
   const navigate = useNavigate();
   const [status, setStatus] = useState('idle'); // idle, verifying, success, error
   const [log, setLog] = useState("Ready to verify identity.");
 
-  const verifyIdentity = async () => {
-    if (!webcamRef.current) return;
-    const imageSrc = webcamRef.current.getScreenshot();
+  // This replaces verifyIdentity. It runs automatically when FaceLivenessCam detects a blink.
+  const handleCapture = async (imageSrc) => {
     if (!imageSrc) return;
 
     setStatus('verifying');
     setLog("🔐 Verifying with Face++ Cloud...");
 
     try {
+      // --- EXISTING LOGIC STARTS HERE ---
       const res = await fetch('/api/v1/auth/scan', { 
         method: 'POST', 
         headers: { 'Content-Type': 'application/json' },
@@ -36,11 +34,15 @@ const Login = () => {
       } else {
         setStatus('error');
         setLog(`⛔ ${data.message || "Verification Failed"}`);
+        // Reset to idle so they can try blinking again
         setTimeout(() => setStatus('idle'), 3000);
       }
+      // --- EXISTING LOGIC ENDS HERE ---
+
     } catch (e) {
       setStatus('error');
       setLog("❌ Server Error. Try again.");
+      setTimeout(() => setStatus('idle'), 3000);
     }
   };
 
@@ -52,41 +54,31 @@ const Login = () => {
       </div>
 
       <div className="relative group rounded-full">
-        {/* Status Ring Animation */}
+        {/* Status Ring Animation (Preserved) */}
         <div className={`absolute -inset-4 rounded-full blur-xl transition-all duration-500 opacity-40 ${
           status === 'verifying' ? 'bg-blue-500 animate-pulse' : 
           status === 'success' ? 'bg-green-500' : 
           status === 'error' ? 'bg-red-500' : 'bg-slate-700'
         }`} />
         
-        <div className={`relative w-72 h-72 rounded-full overflow-hidden border-4 transition-all duration-300 bg-black ${
-          status === 'success' ? 'border-green-500' : 
-          status === 'error' ? 'border-red-500' : 'border-slate-700'
-        }`}>
-          <Webcam 
-            ref={webcamRef} 
-            screenshotFormat="image/jpeg" 
-            className="w-full h-full object-cover transform scale-x-[-1]"
-          />
-        </div>
+        {/* REPLACED: Static Webcam -> FaceLivenessCam */}
+        {/* We pass 'isProcessing' so the camera knows to stop detecting once verified */}
+        <FaceLivenessCam 
+            onCapture={handleCapture} 
+            isProcessing={status === 'verifying' || status === 'success'}
+        />
       </div>
 
       <div className="mt-10 w-full max-w-sm text-center space-y-6">
-        <div className="py-4 px-6 rounded-2xl bg-slate-800 border border-slate-700 text-slate-300 font-mono text-sm">
+        <div className={`py-4 px-6 rounded-2xl border font-mono text-sm transition-colors ${
+            status === 'error' ? "bg-red-900/20 border-red-500/50 text-red-200" :
+            status === 'success' ? "bg-green-900/20 border-green-500/50 text-green-200" :
+            "bg-slate-800 border-slate-700 text-slate-300"
+        }`}>
             {log}
         </div>
 
-        <button 
-            onClick={verifyIdentity}
-            disabled={status === 'verifying' || status === 'success'}
-            className={`w-full py-4 rounded-xl font-bold text-lg flex items-center justify-center gap-2 shadow-lg transition-all active:scale-95 ${
-                status === 'verifying' ? 'bg-slate-600 cursor-wait' :
-                status === 'success' ? 'bg-green-600' :
-                'bg-blue-600 hover:bg-blue-500'
-            }`}
-        >
-            {status === 'verifying' ? "Scanning..." : <><ScanFace /> VERIFY ME</>}
-        </button>
+        {/* Removed Manual Button: The Blink Check triggers the action automatically */}
       </div>
     </div>
   );
