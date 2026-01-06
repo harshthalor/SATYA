@@ -1,15 +1,22 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react'; // 1. Import useRef
 import { useNavigate } from 'react-router-dom';
-import FaceLivenessCam from '../components/FaceLivenessCam'; // Import the new component
+import FaceLivenessCam from '../components/FaceLivenessCam'; 
 
 const Login = () => {
   const navigate = useNavigate();
   const [status, setStatus] = useState('idle'); // idle, verifying, success, error
   const [log, setLog] = useState("Ready to verify identity.");
+  
+  // 2. Create the Lock
+  const isSubmittingRef = useRef(false);
 
   // This replaces verifyIdentity. It runs automatically when FaceLivenessCam detects a blink.
   const handleCapture = async (imageSrc) => {
-    if (!imageSrc) return;
+    // 3. CHECK LOCK: If verification is already running, stop here.
+    if (!imageSrc || isSubmittingRef.current) return;
+
+    // 4. SET LOCK: Block future requests
+    isSubmittingRef.current = true;
 
     setStatus('verifying');
     setLog("🔐 Verifying with Face++ Cloud...");
@@ -35,14 +42,20 @@ const Login = () => {
         setStatus('error');
         setLog(`⛔ ${data.message || "Verification Failed"}`);
         // Reset to idle so they can try blinking again
-        setTimeout(() => setStatus('idle'), 3000);
+        setTimeout(() => {
+            setStatus('idle');
+            isSubmittingRef.current = false; // 5. UNLOCK on error so they can retry
+        }, 3000);
       }
       // --- EXISTING LOGIC ENDS HERE ---
 
     } catch (e) {
       setStatus('error');
       setLog("❌ Server Error. Try again.");
-      setTimeout(() => setStatus('idle'), 3000);
+      setTimeout(() => {
+          setStatus('idle');
+          isSubmittingRef.current = false; // 5. UNLOCK on error so they can retry
+      }, 3000);
     }
   };
 
