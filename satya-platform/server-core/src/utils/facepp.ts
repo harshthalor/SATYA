@@ -3,7 +3,6 @@ import FormData from 'form-data';
 
 const API_KEY = process.env.FACEPP_API_KEY;
 const API_SECRET = process.env.FACEPP_API_SECRET;
-// We use this ID for everything. It is a user-defined ID.
 const FACESET_OUTER_ID = process.env.FACEPP_FACESET_TOKEN || 'satya_voters_faceset';
 const BASE_URL = 'https://api-us.faceplusplus.com/facepp/v3';
 
@@ -12,7 +11,7 @@ const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 // Helper: Basic Request (Throttled)
 const makeRequest = async (endpoint: string, params: any) => {
-    await sleep(1200); // 1.2s Throttle is usually enough
+    await sleep(1200); // 1.2s Throttle
 
     const form = new FormData();
     form.append('api_key', API_KEY);
@@ -37,17 +36,13 @@ const makeRequest = async (endpoint: string, params: any) => {
 export const ensureFaceSetExists = async () => {
     try {
         console.log(`⚙️ Ensuring FaceSet '${FACESET_OUTER_ID}' exists...`);
-        
-        // Try to create using OUTER_ID (Your custom name)
         await makeRequest('/faceset/create', { 
             outer_id: FACESET_OUTER_ID, 
             display_name: 'Satya Voters'
         });
-        
         console.log("✅ New FaceSet Created.");
-        await sleep(2000); // Short wait for propagation
+        await sleep(2000); 
     } catch (error: any) {
-        // If it exists, we are good.
         if (error.message.includes('FACESET_EXIST')) {
             console.log("✅ FaceSet already exists.");
             return;
@@ -57,9 +52,55 @@ export const ensureFaceSetExists = async () => {
 };
 
 /**
- * 2. SEARCH FACE (Use outer_id)
+ * 2. NEW: LIVENESS CHECK (Quality Analysis)
+ * Returns true if the image is high quality (likely real), false if suspicious.
+ */
+/**
+ * 2. UPDATED: STRICTER LIVENESS CHECK
+ * Checks Quality + Blur to detect screens.
+ */
+export const checkLiveness = async (base64Image: string): Promise<boolean> => {
+    try {
+        const res = await makeRequest('/detect', {
+            image_base64: base64Image,
+            return_attributes: 'facequality,blur' 
+        });
+
+        if (!res.faces || res.faces.length === 0) return false;
+
+        const face = res.faces[0];
+        const quality = face.attributes.facequality.value; // 0 to 100
+        const blur = face.attributes.blur.blurness.value;  // 0 to 100 (Lower is clearer)
+
+        console.log(`🔍 LIVENESS DEBUG -> Quality: ${quality} | Blur: ${blur}`);
+
+        // 1. STRICTER QUALITY THRESHOLD
+        // Real faces in good light are usually > 90. Phone screens are often 70-85.
+        // Let's bump this to 80.0 or 85.0
+        if (quality < 80.0) {
+            console.warn("⚠️ Liveness Failed: Low Quality (Possible Screen)");
+            return false;
+        }
+
+        // 2. BLUR CHECK
+        // If the image is too blurry, it's likely a bad capture or a screen held badly.
+        // Threshold: Reject if blur > 10.0 (adjust based on your camera)
+        if (blur > 10.0) {
+             console.warn("⚠️ Liveness Failed: Image too blurry");
+             return false;
+        }
+        
+        return true;
+    } catch (error) {
+        console.error("Liveness Check Failed (API Error):", error);
+        return false; // Fail secure
+    }
+};
+/**
+ * 3. SEARCH FACE (Use outer_id)
  */
 export const searchFace = async (base64Image: string) => {
+    // Note: We do a basic detect here just to get the token for searching
     const detectRes = await makeRequest('/detect', { image_base64: base64Image });
     if (!detectRes.faces || detectRes.faces.length === 0) return null;
     
@@ -68,7 +109,7 @@ export const searchFace = async (base64Image: string) => {
     try {
         const searchRes = await makeRequest('/search', {
             face_token: faceToken,
-            outer_id: FACESET_OUTER_ID, // <--- CHANGED to outer_id
+            outer_id: FACESET_OUTER_ID,
             return_result_count: 1
         });
 
@@ -81,7 +122,6 @@ export const searchFace = async (base64Image: string) => {
         return { matchFound: false, faceToken: faceToken };
 
     } catch (e: any) {
-        // If empty or invalid, assume unique
         if (e.message.includes('EMPTY_FACESET') || e.message.includes('INVALID_FACESET')) {
             return { matchFound: false, faceToken: faceToken };
         }
@@ -90,19 +130,17 @@ export const searchFace = async (base64Image: string) => {
 };
 
 /**
- * 3. ENROLL FACE (Use outer_id)
+ * 4. ENROLL FACE (Use outer_id)
  */
 export const enrollFace = async (faceToken: string, userId: string, retries = 3) => {
     try {
         console.log(`📝 Enrolling face into '${FACESET_OUTER_ID}'...`);
         
-        // Add Face using OUTER_ID
         await makeRequest('/faceset/addface', {
-            outer_id: FACESET_OUTER_ID, // <--- CHANGED to outer_id
+            outer_id: FACESET_OUTER_ID,
             face_tokens: faceToken
         });
 
-        // Tag User ID
         await makeRequest('/face/setuserid', {
             face_token: faceToken,
             user_id: userId
