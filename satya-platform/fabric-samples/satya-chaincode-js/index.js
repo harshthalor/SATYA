@@ -10,6 +10,7 @@ class VoterContract extends Contract {
                 voterID: 'V001',
                 biometricHash: 'dummy_hash_123',
                 homeState: 'Delhi',
+                home_constituency_id: '1', // Added default constituency
                 currentStatus: 'ACTIVE',
                 hasVoted: false
             }
@@ -20,11 +21,10 @@ class VoterContract extends Contract {
             console.info(`Asset ${voter.voterID} initialized`);
         }
     }
-    // --- NEW FUNCTION: GET ALL ASSETS (Required for Results) ---
-    // Returns all voters and ballots stored in the world state
+
+    // --- FUNCTION: GET ALL ASSETS ---
     async GetAllAssets(ctx) {
         const allResults = [];
-        // empty string startKey and endKey = fetch everything
         const iterator = await ctx.stub.getStateByRange('', '');
         let result = await iterator.next();
         
@@ -43,7 +43,6 @@ class VoterContract extends Contract {
         return JSON.stringify(allResults);
     }
 
-    // CreateVoter adds a new voter to the world state with given details.
     async CreateVoter(ctx, voterID, biometricHash, homeState) {
         const voter = {
             voterID: voterID,
@@ -56,7 +55,6 @@ class VoterContract extends Contract {
         return JSON.stringify(voter);
     }
 
-    // ReadVoter returns the voter stored in the world state with given id.
     async ReadVoter(ctx, voterID) {
         const voterJSON = await ctx.stub.getState(voterID);
         if (!voterJSON || voterJSON.length === 0) {
@@ -65,16 +63,39 @@ class VoterContract extends Contract {
         return voterJSON.toString();
     }
 
-    // VoterExists returns true when asset with given ID exists in world state.
     async VoterExists(ctx, voterID) {
         const voterJSON = await ctx.stub.getState(voterID);
         return voterJSON && voterJSON.length > 0;
     }
 
-    // CastVote: The core Phase 3 Mobility function
+    // --- 🚨 NEW: THE MISSING MOBILITY FUNCTION 🚨 ---
+    async TransferVoter(ctx, voterID, newState, home_constituency_id) {
+        // 1. Get the voter record
+        const voterJSON = await ctx.stub.getState(voterID);
+        if (!voterJSON || voterJSON.length === 0) {
+            throw new Error(`Voter ${voterID} does not exist.`);
+        }
+
+        const voter = JSON.parse(voterJSON.toString());
+
+        // 2. SECURITY CHECK: Cannot move if already voted
+        if (voter.hasVoted) {
+            throw new Error(`SECURITY ALERT: Voter ${voterID} has already voted. Transfer denied.`);
+        }
+
+        // 3. Update Location
+        console.info(`Moving ${voterID} from ${voter.homeState} to ${newState}`);
+        voter.homeState = newState;
+        voter.home_constituency_id = home_constituency_id; 
+        
+        // 4. Save to Ledger
+        await ctx.stub.putState(voterID, Buffer.from(JSON.stringify(voter)));
+        
+        return `Success: Voter moved to ${newState} (Constituency: ${home_constituency_id}).`;
+    }
+
     // CastVote: Upgraded Phase 3 Mobility function with Cross-State Validation
     async CastVote(ctx, voterID, candidateID, candidateState, boothLocation) {
-        // 1. Get the voter record from the Ledger
         const voterJSON = await ctx.stub.getState(voterID);
         if (!voterJSON || voterJSON.length === 0) {
             throw new Error(`Voter ${voterID} is not registered in the system.`);
@@ -82,18 +103,14 @@ class VoterContract extends Contract {
 
         const voter = JSON.parse(voterJSON.toString());
 
-        // 2. Double-Voting Protection
         if (voter.hasVoted) {
             throw new Error(`Security Violation: Voter ${voterID} has already cast a vote.`);
         }
 
-        // 3. THE UNIVERSAL TRANSLATOR LOGIC
         if (voter.homeState !== candidateState) {
             throw new Error(`Invalid Ballot: Voter from ${voter.homeState} cannot vote for a candidate in ${candidateState}.`);
         }
 
-        // 4. Create the Vote Record (ANONYMIZED)
-        // We remove voterID from the record itself to ensure a "Secret Ballot"
         const voteRecord = {
             candidateID: candidateID,
             homeState: voter.homeState, 
@@ -102,27 +119,20 @@ class VoterContract extends Contract {
             docType: 'ballot'
         };
 
-        // 5. Update Voter Status (Private Update)
         voter.hasVoted = true;
         await ctx.stub.putState(voterID, Buffer.from(JSON.stringify(voter)));
         
-        // 6. STEP 3: PRIVACY HASHING
-        // Use the unique Transaction ID as the key instead of the voterID.
-        // This makes the ballot record anonymous on the ledger.
         const txId = ctx.stub.getTxID(); 
         await ctx.stub.putState(`BALLOT_${txId}`, Buffer.from(JSON.stringify(voteRecord)));
 
         console.info(`Vote successfully cast and anonymized. Reference: ${txId}`);
-        return txId; // Return the reference ID to the voter for verification
+        return txId; 
     }
 
-    // Phase 3: Step 2 - Bulk registration for National State Sync
     async BulkRegisterVoters(ctx, votersDataJSON) {
-        // Parse the incoming string into a JSON array
         const voters = JSON.parse(votersDataJSON); 
         
         for (const voter of voters) {
-            // Safety check: Don't overwrite existing voters
             const exists = await this.VoterExists(ctx, voter.voterID);
             if (!exists) {
                 const voterRecord = {
@@ -133,14 +143,12 @@ class VoterContract extends Contract {
                     hasVoted: false,
                     docType: 'voter'
                 };
-                // Commit each voter to the World State
                 await ctx.stub.putState(voter.voterID, Buffer.from(JSON.stringify(voterRecord)));
             }
         }
         return `Successfully synchronized ${voters.length} voters to the SATYA Ledger.`;
     }
 }
-
 
 module.exports.VoterContract = VoterContract;
 module.exports.contracts = [ VoterContract ];

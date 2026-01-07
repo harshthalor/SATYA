@@ -162,7 +162,7 @@ const VoterOnboarding = () => {
         {/* LOG CONSOLE */}
         <div className="w-full max-w-lg p-4 bg-slate-900 rounded-xl font-mono text-xs text-green-400 border border-slate-800 overflow-y-auto max-h-[150px]">
             <p className="opacity-50 border-b border-slate-700 pb-2 mb-2">SYSTEM LOG:</p>
-            <p className="animate-pulse">> {log || "Waiting for Liveness Check..."}</p>
+            <p className="animate-pulse"> {log || "Waiting for Liveness Check..."}</p>
         </div>
       </div>
     </div>
