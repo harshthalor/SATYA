@@ -5,6 +5,7 @@ import { LayoutDashboard, UserPlus } from 'lucide-react';
 // Import Pages
 import Dashboard from './pages/Dashboard';
 import VoterOnboarding from './pages/VoterOnboarding';
+import UpdateConstituency from './pages/UpdateConstituency'
 
 // Simple Navbar Component
 const Navbar = () => {
@@ -24,6 +25,9 @@ const Navbar = () => {
         <Link to="/register" className={`px-4 py-2 rounded-lg flex items-center gap-2 transition-all ${isActive('/register')}`}>
           <UserPlus size={18} /> Register Voter
         </Link>
+        <Link to="/update" className={`px-4 py-2 rounded-lg flex items-center gap-2 transition-all ${isActive('/update')}`}>
+          <UserPlus size={18} /> Update Constituency
+        </Link>
       </div>
     </nav>
   );
@@ -37,6 +41,7 @@ function App() {
         <Routes>
           <Route path="/" element={<Dashboard />} />
           <Route path="/register" element={<VoterOnboarding />} />
+          <Route path="/update" element={<UpdateConstituency />} />
         </Routes>
       </div>
     </Router>

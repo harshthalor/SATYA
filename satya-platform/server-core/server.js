@@ -38,7 +38,7 @@ async function getContract() {
     const gateway = new Gateway();
     await gateway.connect(ccp, {
         wallet,
-        identity: 'appUserV4', // The user we created earlier
+        identity: 'appUserV1', // The user we created earlier
         discovery: { enabled: true, asLocalhost: true } ,// Crucial for Docker/Colima
         asLocalhost: true
     });
@@ -120,7 +120,7 @@ app.post('/cast-vote', async (req, res) => {
     }
 });
 
-app.post('/create-voter', async (req, res) => {
+app.post('/register-voter', async (req, res) => {
     try {
         const { voterId, biometricHash, homeState } = req.body;
 
@@ -189,6 +189,38 @@ app.post('/bulk-register', async (req, res) => {
         res.status(200).json({ success: true, message: "State sync complete." });
     } catch (error) {
         res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// --- ROUTE: CHANGE STATE (MOBILITY) ---
+app.post('/change-state', async (req, res) => {
+    try {
+        const { voterId, newState, newConstituencyId } = req.body;
+
+        if (!voterId || !newState || !newConstituencyId) {
+             console.log("❌ Missing Data:", req.body);
+             return res.status(400).json({ error: "Missing VoterID, State, or Constituency ID" });
+        }
+
+        const { contract, gateway } = await getContract();
+
+        console.log(`\n--> Request: Moving ${voterId} to ${newState}`);
+        console.log(`--> Setting home_constituency_id to: ${newConstituencyId}`);
+
+        // Submit to Blockchain
+        await contract.submitTransaction('TransferVoter', voterId, newState, newConstituencyId);
+
+        console.log('✅ Transfer Committed successfully');
+        await gateway.disconnect();
+
+        res.status(200).json({
+            success: true,
+            message: `Moved to ${newState} (Const ID: ${newConstituencyId})`
+        });
+
+    } catch (error) {
+        console.error(`❌ Transfer Failed: ${error}`);
+        res.status(500).json({ error: error.message });
     }
 });
 
