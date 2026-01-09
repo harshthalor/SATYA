@@ -6,6 +6,7 @@ class VoterContract extends Contract {
 
     async InitLedger(ctx) {
         console.info('============= START : Initialize Ledger ===========');
+        // Initial setup remains the same
         const voters = [
             {
                 voterID: 'V001',
@@ -20,127 +21,101 @@ class VoterContract extends Contract {
 
         for (const voter of voters) {
             await ctx.stub.putState(voter.voterID, Buffer.from(JSON.stringify(voter)));
-            console.info(`Asset ${voter.voterID} initialized`);
         }
         console.info('============= END : Initialize Ledger ===========');
     }
 
-    // ============================================================
-    // 🔐 PHASE 1 UPGRADE: VOTE TOKEN MANAGEMENT (Double Vote Proof)
-    // ============================================================
+    // --- HELPER: GET DETERMINISTIC TIMESTAMP ---
+    _getTxTimestamp(ctx) {
+        // This ensures every peer gets the EXACT same time for this transaction
+        const timestamp = ctx.stub.getTxTimestamp();
+        return new Date(timestamp.seconds.low * 1000).toISOString();
+    }
 
-    /**
-     * Helper to create a consistent key for a vote token.
-     * Format: VOTE_TOKEN_{ElectionID}_{VoterID}
-     */
     async getVoteTokenKey(ctx, electionId, voterID) {
         return ctx.stub.createCompositeKey('VOTE_TOKEN', [electionId, voterID]);
     }
 
-    /**
-     * MintVoteToken: AUTHORIZES a voter for a specific election.
-     * This effectively "hands out the ballot paper".
-     * Must be called by EC Admin or automatically upon registration verification.
-     */
     async MintVoteToken(ctx, electionId, voterID) {
-        // 1. Check if voter exists
         const voterExists = await this.VoterExists(ctx, voterID);
         if (!voterExists) {
             throw new Error(`Cannot mint token: Voter ${voterID} does not exist.`);
         }
 
-        // 2. Generate Unique Token Key
         const tokenKey = await this.getVoteTokenKey(ctx, electionId, voterID);
-        
-        // 3. Check if token already exists (Idempotency)
         const tokenBytes = await ctx.stub.getState(tokenKey);
         if (tokenBytes && tokenBytes.length > 0) {
-            throw new Error(`Token already exists for Voter ${voterID} in Election ${electionId}`);
+            throw new Error(`Token already exists for Voter ${voterID}`);
         }
 
-        // 4. Create the Token Asset
         const token = {
             docType: 'voteToken',
             electionId: electionId,
             voterID: voterID,
-            isUsed: false, // The critical flag
-            issuedAt: new Date().toISOString() // Audit trail
+            isUsed: false,
+            // 🛑 FIX: Use deterministic timestamp
+            issuedAt: this._getTxTimestamp(ctx) 
         };
 
-        // 5. Commit to Ledger
         await ctx.stub.putState(tokenKey, Buffer.from(JSON.stringify(token)));
         return JSON.stringify(token);
     }
 
-    /**
-     * CastVote: The "Burn" Transaction.
-     * Consumes the token and records the vote in ONE atomic step.
-     */
     async CastVote(ctx, electionId, voterID, candidateID, candidateState, boothLocation) {
-        // --- STEP 1: RETRIEVE VOTER & VALIDATE IDENTITY ---
+        // 1. Get Voter
         const voterJSON = await ctx.stub.getState(voterID);
         if (!voterJSON || voterJSON.length === 0) {
-            throw new Error(`Voter ${voterID} is not registered in the system.`);
+            throw new Error(`Voter ${voterID} is not registered.`);
         }
         const voter = JSON.parse(voterJSON.toString());
 
-        // --- STEP 2: RETRIEVE VOTE TOKEN (The "Ballot Paper") ---
+        // 2. Get Token
         const tokenKey = await this.getVoteTokenKey(ctx, electionId, voterID);
         const tokenBytes = await ctx.stub.getState(tokenKey);
         
         if (!tokenBytes || tokenBytes.length === 0) {
-            throw new Error(`SECURITY VIOLATION: No valid Vote Token found for ${voterID} in election ${electionId}. Authorization denied.`);
+            throw new Error(`SECURITY VIOLATION: No valid Vote Token found for ${voterID}.`);
         }
 
         const token = JSON.parse(tokenBytes.toString());
 
-        // --- STEP 3: THE "BURN" CHECK (Cryptographic Double Vote Prevention) ---
         if (token.isUsed === true) {
-            throw new Error(`SECURITY ALERT: Double Voting Attempt Detected! Token ${tokenKey} has already been burned.`);
+            throw new Error(`SECURITY ALERT: Double Voting Attempt Detected!`);
         }
 
-        // --- STEP 4: BUSINESS LOGIC VALIDATION (Mobility Checks) ---
         if (voter.homeState !== candidateState) {
-            throw new Error(`Invalid Ballot: Voter from ${voter.homeState} cannot vote for a candidate in ${candidateState}.`);
+            throw new Error(`Invalid Ballot: State Mismatch.`);
         }
 
-        // --- STEP 5: ATOMIC EXECUTION (The "Burn") ---
-        
-        // A. Burn the Token
+        // 🛑 FIX: Use deterministic timestamp
+        const txTime = this._getTxTimestamp(ctx);
+
+        // 3. Burn Token (Atomic Update)
         token.isUsed = true;
-        token.usedAt = new Date().toISOString();
+        token.usedAt = txTime; // Safe now
         token.burnLocation = boothLocation;
 
-        // B. Update Voter Status (Legacy check compatibility)
         voter.hasVoted = true;
 
-        // C. Create the Ballot Record (Anonymized Vote)
         const voteRecord = {
             docType: 'ballot',
             electionId: electionId,
             candidateID: candidateID,
-            constituency: voter.home_constituency_id, // Lock vote to home constituency
+            constituency: voter.home_constituency_id,
             state: voter.homeState,
             castAt: boothLocation,
-            timestamp: ctx.stub.getTxTimestamp().seconds.low.toString()
+            timestamp: txTime // Safe now
         };
 
-        // --- STEP 6: COMMIT ALL CHANGES ---
-        // Fabric ensures either ALL these putStates happen, or NONE do.
-        await ctx.stub.putState(tokenKey, Buffer.from(JSON.stringify(token))); // Burn token
-        await ctx.stub.putState(voterID, Buffer.from(JSON.stringify(voter)));  // Update voter
+        await ctx.stub.putState(tokenKey, Buffer.from(JSON.stringify(token))); 
+        await ctx.stub.putState(voterID, Buffer.from(JSON.stringify(voter)));  
         
-        // Save Ballot with a unique ID (Transaction ID ensures uniqueness)
         const txId = ctx.stub.getTxID();
         await ctx.stub.putState(`BALLOT_${txId}`, Buffer.from(JSON.stringify(voteRecord)));
 
-        console.info(`✅ Vote Cast Successfully. Token Burned. Ballot Ref: ${txId}`);
+        console.info(`✅ Vote Cast Successfully. Reference: ${txId}`);
         return txId;
     }
-
-    // ============================================================
-    // 🛠 EXISTING UTILITIES (Preserved)
-    // ============================================================
 
     async CreateVoter(ctx, voterID, biometricHash, homeState) {
         const voter = {
@@ -173,19 +148,17 @@ class VoterContract extends Contract {
         if (!voterJSON || voterJSON.length === 0) {
             throw new Error(`Voter ${voterID} does not exist.`);
         }
-
         const voter = JSON.parse(voterJSON.toString());
 
         if (voter.hasVoted) {
             throw new Error(`SECURITY ALERT: Voter ${voterID} has already voted. Transfer denied.`);
         }
 
-        console.info(`Moving ${voterID} from ${voter.homeState} to ${newState}`);
         voter.homeState = newState;
         voter.home_constituency_id = home_constituency_id; 
         
         await ctx.stub.putState(voterID, Buffer.from(JSON.stringify(voter)));
-        return `Success: Voter moved to ${newState} (Constituency: ${home_constituency_id}).`;
+        return `Success: Voter moved to ${newState}`;
     }
 
     async BulkRegisterVoters(ctx, votersDataJSON) {
@@ -204,7 +177,6 @@ class VoterContract extends Contract {
                 await ctx.stub.putState(voter.voterID, Buffer.from(JSON.stringify(voterRecord)));
             }
         }
-        return `Successfully synchronized ${voters.length} voters to the SATYA Ledger.`;
     }
 
     async GetAllAssets(ctx) {

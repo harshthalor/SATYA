@@ -3,12 +3,15 @@
  * Component: API Gateway (server.js)
  * Purpose: The Bridge between the Web and the Blockchain.
  */
-console.log("🚨🚨🚨 SATYA GATEWAY V2: TOKEN LOGIC ENABLED 🚨🚨🚨");
+console.log("🚨🚨🚨 SATYA GATEWAY V3: KAFKA EVENT BACKBONE ENABLED 🚨🚨🚨");
 const express = require('express');
 const cors = require('cors');
 const { Gateway, Wallets } = require('fabric-network');
 const fs = require('fs');
 const path = require('path');
+
+// ➕ NEW: Import the Kafka Producer
+const { sendVoteToQueue } = require('./kafka/producer');
 
 const app = express();
 
@@ -43,12 +46,11 @@ async function getContract() {
 }
 
 // =================================================================
-// 🔐 PHASE 1: TOKEN MANAGEMENT (NEW)
+// 🔐 PHASE 1: TOKEN MANAGEMENT (DIRECT - NO QUEUE NEEDED)
 // =================================================================
 
 // --- API ENDPOINT: MINT VOTE TOKEN ---
-// Usage: POST http://localhost:3000/mint-token
-// Payload: { "electionId": "SATYA_LS_2026", "voterID": "ABC1234567" }
+// This remains synchronous because it's an infrequent administrative action
 app.post('/mint-token', async (req, res) => {
     try {
         const { electionId, voterID } = req.body;
@@ -67,60 +69,48 @@ app.post('/mint-token', async (req, res) => {
         });
     } catch (error) {
         console.error(`❌ Minting Failed: ${error}`);
-        // Return 409 if it already exists, or 500 for other errors
         const status = error.message.includes('already exists') ? 409 : 500;
         res.status(status).json({ success: false, error: error.message });
     }
 });
 
-// --- API ENDPOINT: CAST VOTE (UPDATED FOR TOKEN BURN) ---
+// =================================================================
+// 🚀 PHASE 2: HIGH-THROUGHPUT VOTING (MODIFIED FOR KAFKA)
+// =================================================================
+
+// --- API ENDPOINT: CAST VOTE (QUEUED) ---
 // Usage: POST http://localhost:3000/cast-vote
 app.post('/cast-vote', async (req, res) => {
     try {
-        // 1. Destructure all 5 arguments required by Chaincode V2
+        // 1. Destructure all arguments
         const { electionId, voterID, candidateID, candidateState, boothLocation } = req.body;
         
         if (!electionId || !voterID || !candidateID || !candidateState) {
             return res.status(400).json({ error: "Missing required voting fields" });
         }
 
-        const { contract, gateway } = await getContract();
+        console.log(`\n📥 INCOMING VOTE: ${voterID} -> Queueing...`);
 
-        console.log(`\n🗳️ CAST VOTE REQUEST:`);
-        console.log(`   Election: ${electionId}`);
-        console.log(`   Voter: ${voterID}`);
-        console.log(`   Target: ${candidateID} (${candidateState})`);
-
-        // 2. Submit Transaction (Atomic Token Burn + Vote)
-        const result = await contract.submitTransaction(
-            'CastVote', 
+        // 2. 🔥 SEND TO KAFKA PRODUCER (Instead of blocking on Blockchain)
+        // This is instant (~10ms) vs Blockchain (~2000ms)
+        await sendVoteToQueue({
             electionId, 
             voterID, 
             candidateID, 
             candidateState, 
             boothLocation
-        );
-        
-        console.log(`✅ Transaction Committed. TXID: ${result.toString()}`);
-        await gateway.disconnect();
+        });
 
+        // 3. ⚡ INSTANT RESPONSE to Client
+        // The client gets a "Received" status. The actual mining happens in the background.
         res.status(200).json({ 
             success: true, 
-            txId: result.toString(), 
-            message: `Vote successfully cast and token burned.`
+            message: `Vote received and queued for processing.`
         });
-    } catch (error) {
-        console.error(`❌ Vote Failed: ${error}`);
         
-        // Handle specific security violations clearly
-        if (error.message.includes("Double Voting")) {
-            return res.status(409).json({ success: false, error: "SECURITY ALERT: Double Voting Detected" });
-        }
-        if (error.message.includes("No valid Vote Token")) {
-            return res.status(403).json({ success: false, error: "Voter does not possess a valid ballot token." });
-        }
-
-        res.status(500).json({ success: false, error: error.message });
+    } catch (error) {
+        console.error(`❌ Queue Failed: ${error}`);
+        res.status(500).json({ success: false, error: "System Busy - Queue Unavailable" });
     }
 });
 
