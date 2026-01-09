@@ -19,7 +19,7 @@ const VoterOnboarding = () => {
   const [cameraActive, setCameraActive] = useState(false);
   
   // Log state
-  const [logState, setLogState] = useState({ message: "System Ready. Awaiting Input...", type: "info" });
+  const [logState, setLogState] = useState({ message: "System Initialized. Waiting for user...", type: "info" });
   
   // Form Data
   const [formData, setFormData] = useState({
@@ -202,7 +202,6 @@ const VoterOnboarding = () => {
             </div>
 
             {/* --- FIXED CAMERA CONTAINER --- */}
-            {/* Using aspect-video (16/9) or aspect-square can help, but here fixed dims with flex center is safest */}
             <div className="relative group z-0">
                 {/* Decorative corners */}
                 <div className={`absolute -top-3 -left-3 w-8 h-8 border-t-4 border-l-4 rounded-tl-lg transition-colors duration-300 ${mode==='captured'?'border-emerald-500':'border-indigo-400'}`}></div>
@@ -225,8 +224,6 @@ const VoterOnboarding = () => {
                     ) : (
                         // SCENARIO 2: CAMERA / STANDBY
                         <div className="w-full h-full relative flex items-center justify-center bg-black">
-                            
-                            {/* CSS to force video centering */}
                             <style>{`
                                 .camera-wrapper {
                                     display: flex;
@@ -237,13 +234,11 @@ const VoterOnboarding = () => {
                                     overflow: hidden;
                                 }
                                 .camera-wrapper video {
-                                    /* Force video to cover the container */
                                     min-width: 100%;
                                     min-height: 100%;
                                     width: auto !important;
                                     height: auto !important;
                                     object-fit: cover !important;
-                                    /* Center it */
                                     position: absolute;
                                     left: 50%;
                                     top: 50%;
@@ -268,8 +263,9 @@ const VoterOnboarding = () => {
                                         <div className="w-16 h-16 rounded-full bg-indigo-600 flex items-center justify-center shadow-[0_0_30px_rgba(79,70,229,0.5)] group-hover:scale-110 group-hover:bg-indigo-500 transition-all duration-300">
                                             <Camera size={28} className="text-white" />
                                         </div>
+                                        {/* CHANGED TEXT HERE */}
                                         <span className="text-white font-bold text-xs tracking-widest uppercase opacity-80 group-hover:opacity-100 transition-opacity">
-                                            Enable Feed
+                                            Start Camera
                                         </span>
                                     </button>
                                 </div>
@@ -280,39 +276,34 @@ const VoterOnboarding = () => {
             </div>
 
             {/* Control Panel */}
-            <div className="mt-8 flex gap-4">
+            <div className="mt-8 flex gap-4 h-10">
                  {mode === 'captured' && (
-                    <button onClick={reset} className="py-2.5 px-6 bg-white border border-slate-200 text-slate-600 rounded-lg font-bold text-sm flex items-center justify-center gap-2 hover:bg-slate-50 hover:border-slate-300 hover:text-slate-800 transition-all shadow-sm">
+                    <button onClick={reset} className="px-6 bg-white border border-slate-200 text-slate-600 rounded-lg font-bold text-sm flex items-center justify-center gap-2 hover:bg-slate-50 hover:border-slate-300 hover:text-slate-800 transition-all shadow-sm">
                         <Camera size={16} /> Retake Photo
                     </button>
                  )}
             </div>
 
-            {/* TERMINAL / SYSTEM LOG */}
-            <div className="w-full max-w-lg mt-8">
-                <div className="bg-slate-900 rounded-lg border border-slate-700 overflow-hidden shadow-inner">
-                    <div className="bg-slate-800 px-3 py-1 flex items-center gap-1.5 border-b border-slate-700">
-                        <div className="w-2.5 h-2.5 rounded-full bg-red-500"></div>
-                        <div className="w-2.5 h-2.5 rounded-full bg-yellow-500"></div>
-                        <div className="w-2.5 h-2.5 rounded-full bg-green-500"></div>
-                        <span className="text-[10px] text-slate-400 ml-2 font-mono">satya-node-client — v1.0.4</span>
-                    </div>
-                    <div className="p-4 h-24 font-mono text-xs overflow-y-auto">
-                         <div className="flex gap-2">
-                            <span className="text-slate-500">{new Date().toLocaleTimeString()}</span>
-                            <span className={`
-                                ${logState.type === 'error' ? 'text-red-400' : ''}
-                                ${logState.type === 'success' ? 'text-emerald-400' : ''}
-                                ${logState.type === 'info' ? 'text-blue-300' : ''}
-                                ${logState.type === 'loading' ? 'text-yellow-300 animate-pulse' : ''}
-                            `}>
-                                {logState.type === 'error' && '❌ '}
-                                {logState.type === 'success' && '✅ '}
-                                {logState.type === 'loading' && '⏳ '}
-                                {logState.type === 'info' && 'ℹ️ '}
-                                {logState.message}
-                            </span>
-                         </div>
+            {/* NEW SYSTEM ACTIVITY MONITOR (MATCHING SCREENSHOT) */}
+            <div className="w-full max-w-lg mt-4">
+                <div className="flex items-center gap-2 mb-3 px-1">
+                    <Activity size={16} className="text-slate-400" />
+                    <h6 className="text-xs font-bold text-slate-400 uppercase tracking-widest">System Activity</h6>
+                </div>
+                
+                <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 min-h-[80px] flex items-center">
+                    <div className="flex items-start gap-4 w-full">
+                        <span className="text-slate-400 font-mono text-xs whitespace-nowrap mt-0.5">
+                            {new Date().toLocaleTimeString()}
+                        </span>
+                        <span className={`text-sm font-semibold flex-1 ${
+                            logState.type === 'error' ? 'text-red-600' : 
+                            logState.type === 'success' ? 'text-emerald-700' : 
+                            logState.type === 'loading' ? 'text-indigo-600' :
+                            'text-slate-700'
+                        }`}>
+                            {logState.message}
+                        </span>
                     </div>
                 </div>
             </div>

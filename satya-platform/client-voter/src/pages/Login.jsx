@@ -1,28 +1,51 @@
-import React, { useState, useRef } from 'react'; // 1. Import useRef
+import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { 
+  ShieldCheck, 
+  ScanFace, 
+  CheckCircle, 
+  XCircle, 
+  Loader2, 
+  Lock,
+  Camera, 
+  Info,
+  Power
+} from 'lucide-react';
+
+// Import Custom Camera
 import FaceLivenessCam from '../components/FaceLivenessCam'; 
 
 const Login = () => {
   const navigate = useNavigate();
-  const [status, setStatus] = useState('idle'); // idle, verifying, success, error
-  const [log, setLog] = useState("Ready to verify identity.");
   
-  // 2. Create the Lock
+  // --- STATE ---
+  const [status, setStatus] = useState('idle'); 
+  const [userData, setUserData] = useState(null);
+  const [isCameraOn, setIsCameraOn] = useState(false); 
+  
+  // Lock
   const isSubmittingRef = useRef(false);
 
-  // This replaces verifyIdentity. It runs automatically when FaceLivenessCam detects a blink.
+  // --- HANDLERS ---
+  const startCamera = () => {
+    setIsCameraOn(true);
+    setStatus('idle');
+    isSubmittingRef.current = false;
+  };
+
+  const togglePower = () => {
+    setIsCameraOn(prev => !prev);
+    setStatus('idle');
+    isSubmittingRef.current = false;
+  };
+
   const handleCapture = async (imageSrc) => {
-    // 3. CHECK LOCK: If verification is already running, stop here.
     if (!imageSrc || isSubmittingRef.current) return;
-
-    // 4. SET LOCK: Block future requests
     isSubmittingRef.current = true;
-
     setStatus('verifying');
-    setLog("🔐 Verifying with Face++ Cloud...");
 
     try {
-      // --- EXISTING LOGIC STARTS HERE ---
+      // API Call
       const res = await fetch('/api/v1/auth/scan', { 
         method: 'POST', 
         headers: { 'Content-Type': 'application/json' },
@@ -33,65 +56,220 @@ const Login = () => {
 
       if (res.ok) {
         setStatus('success');
-        setLog(`✅ Welcome, ${data.user.name}!`);
-        // Save token for the Vote page
+        setUserData(data.user || { name: "Voter" });
         localStorage.setItem('token', data.token);
-        // Redirect to Vote page after 1.5s
         setTimeout(() => navigate("/vote"), 1500); 
       } else {
-        setStatus('error');
-        setLog(`⛔ ${data.message || "Verification Failed"}`);
-        // Reset to idle so they can try blinking again
+        setStatus('error'); // Triggers Red Cross
         setTimeout(() => {
             setStatus('idle');
-            isSubmittingRef.current = false; // 5. UNLOCK on error so they can retry
+            isSubmittingRef.current = false; 
         }, 3000);
       }
-      // --- EXISTING LOGIC ENDS HERE ---
-
     } catch (e) {
       setStatus('error');
-      setLog("❌ Server Error. Try again.");
       setTimeout(() => {
           setStatus('idle');
-          isSubmittingRef.current = false; // 5. UNLOCK on error so they can retry
+          isSubmittingRef.current = false;
       }, 3000);
     }
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-slate-900 text-white p-6">
-      <div className="text-center mb-8">
-        <h1 className="text-4xl font-black tracking-tighter text-blue-400">SATYA VOTER</h1>
-        <p className="text-slate-500 font-mono text-xs uppercase mt-2">Secure Voting Terminal</p>
+    <div className="flex items-center justify-center min-h-screen bg-slate-50 text-slate-900 p-8 font-sans overflow-hidden">
+      
+            {/* CSS to Force Video Fit and center the face in the circle */}
+            <style>{`
+                .camera-circle {
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                }
+
+                .camera-circle video {
+                    width: 100% !important;
+                    height: 100% !important;
+                    object-fit: cover !important;
+                    object-position: center center !important;
+                    transform: scaleX(-1);
+                    border-radius: 50%;
+                    display: block;
+                }
+            `}</style>
+
+      {/* Background Decor */}
+      <div className="fixed inset-0 pointer-events-none">
+        <div className="absolute top-[-10%] left-[-5%] w-[600px] h-[600px] bg-blue-100 rounded-full blur-[100px] opacity-50"></div>
+        <div className="absolute bottom-[-10%] right-[-5%] w-[600px] h-[600px] bg-emerald-100 rounded-full blur-[100px] opacity-50"></div>
       </div>
 
-      <div className="relative group rounded-full">
-        {/* Status Ring Animation (Preserved) */}
-        <div className={`absolute -inset-4 rounded-full blur-xl transition-all duration-500 opacity-40 ${
-          status === 'verifying' ? 'bg-blue-500 animate-pulse' : 
-          status === 'success' ? 'bg-green-500' : 
-          status === 'error' ? 'bg-red-500' : 'bg-slate-700'
-        }`} />
+      {/* --- MAIN CONTAINER --- */}
+      {/* 1. 'items-center': Forces perfect vertical centering for all 3 columns 
+          2. 'gap-8': Reduced gap slightly to keep elements tighter 
+      */}
+    <div className="relative z-10 w-full max-w-7xl bg-white border border-slate-200 rounded-[3rem] p-10 lg:p-14 shadow-2xl shadow-slate-200/50 grid grid-cols-1 lg:grid-cols-3 gap-8 items-center min-h-[600px]">
         
-        {/* REPLACED: Static Webcam -> FaceLivenessCam */}
-        {/* We pass 'isProcessing' so the camera knows to stop detecting once verified */}
-        <FaceLivenessCam 
-            onCapture={handleCapture} 
-            isProcessing={status === 'verifying' || status === 'success'}
-        />
-      </div>
-
-      <div className="mt-10 w-full max-w-sm text-center space-y-6">
-        <div className={`py-4 px-6 rounded-2xl border font-mono text-sm transition-colors ${
-            status === 'error' ? "bg-red-900/20 border-red-500/50 text-red-200" :
-            status === 'success' ? "bg-green-900/20 border-green-500/50 text-green-200" :
-            "bg-slate-800 border-slate-700 text-slate-300"
-        }`}>
-            {log}
+        {/* --- LEFT COLUMN: BRANDING --- */}
+        {/* Removed margins. Grid 'items-center' handles alignment now. */}
+        <div className="text-center lg:text-left space-y-6 lg:pl-2">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 border border-blue-100 text-blue-700 text-xs font-bold rounded-full uppercase tracking-widest shadow-sm">
+                <ShieldCheck size={14} /> SATYA VOTER
+            </div>
+            
+            {/* INCREASED TEXT SIZE */}
+            <h1 className="text-5xl lg:text-7xl font-black text-slate-900 tracking-tight leading-tight">
+                Voter<br/><span className="text-blue-600">Login</span>
+            </h1>
+            
+            {/* INCREASED BODY TEXT SIZE */}
+            <p className="text-slate-500 text-xl font-medium leading-relaxed max-w-md mx-auto lg:mx-0">
+                Secure biometric authentication gate. Verify identity to access the blockchain ballot.
+            </p>
         </div>
 
-        {/* Removed Manual Button: The Blink Check triggers the action automatically */}
+        {/* --- CENTER COLUMN (CAMERA) --- */}
+        {/* Removed margins. Grid automatically centers this column vertically. */}
+        <div className="flex justify-center relative z-20">
+            
+            {/* Camera Circle */}
+            <div className="relative w-80 h-80 rounded-full overflow-hidden shadow-2xl border-[8px] border-white bg-black ring-1 ring-slate-200 camera-circle">
+                
+                {/* STATE A: CAMERA IS ON */}
+                {isCameraOn && (
+                  <>
+                    {(status === 'idle' || status === 'verifying') && (
+                        <div className="absolute inset-0 w-full h-full">
+                           <FaceLivenessCam 
+                                onCapture={handleCapture} 
+                                isProcessing={status !== 'idle'}
+                           />
+                        </div>
+                    )}
+
+                    {/* OVERLAYS */}
+                    <div className="absolute inset-0 z-10 pointer-events-none flex items-center justify-center">
+                        
+                        {/* Idle */}
+                        {status === 'idle' && (
+                           <div className="flex flex-col items-center justify-center text-center">
+                              <div className="w-56 h-56 rounded-full border-2 border-dashed border-white/30 flex items-center justify-center mb-6">
+                                 <ScanFace size={56} className="text-white/50" />
+                              </div>
+                              <span className="absolute bottom-16 bg-black/50 text-white text-xs font-bold px-4 py-1.5 rounded-full backdrop-blur-md border border-white/10">
+                                 Blink to Verify
+                              </span>
+                           </div>
+                        )}
+
+                        {/* Verifying */}
+                        {status === 'verifying' && (
+                            <div className="absolute inset-0 bg-white/90 backdrop-blur-md flex flex-col items-center justify-center">
+                                <Loader2 size={56} className="text-blue-600 animate-spin mb-4" />
+                                <span className="text-blue-900 font-bold text-lg tracking-tight">Verifying...</span>
+                            </div>
+                        )}
+
+                        {/* Success */}
+                        {status === 'success' && (
+                            <div className="absolute inset-0 bg-emerald-50 flex flex-col items-center justify-center animate-in zoom-in duration-300">
+                                <CheckCircle size={72} className="text-emerald-500 mb-4 drop-shadow-md" />
+                                <h3 className="text-2xl font-black text-slate-800">Verified</h3>
+                                <p className="text-emerald-600 font-bold text-xs uppercase tracking-widest mt-2">Welcome {userData?.name}</p>
+                            </div>
+                        )}
+
+                        {/* Error / Not Found */}
+                        {status === 'error' && (
+                            <div className="absolute inset-0 bg-red-50 flex flex-col items-center justify-center animate-in zoom-in duration-300 text-center p-6">
+                                <XCircle size={72} className="text-red-500 mb-4 drop-shadow-md" />
+                                <h3 className="text-2xl font-black text-slate-800">Failed</h3>
+                                <p className="text-slate-500 font-medium text-xs mt-1">Identity Not Found</p>
+                            </div>
+                        )}
+                    </div>
+                  </>
+                )}
+
+                {/* STATE B: CAMERA IS OFF */}
+                {!isCameraOn && (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-900 z-30">
+                        <button 
+                            onClick={startCamera}
+                            className="group relative flex flex-col items-center justify-center gap-4"
+                        >
+                            <div className="w-24 h-24 rounded-full bg-blue-600 flex items-center justify-center shadow-[0_0_40px_rgba(37,99,235,0.4)] group-hover:scale-110 group-hover:bg-blue-500 transition-all duration-300 border-4 border-white/10">
+                                <Camera size={36} className="text-white" />
+                            </div>
+                            <span className="text-white font-bold text-xs tracking-[0.2em] uppercase opacity-80 group-hover:opacity-100 transition-opacity">
+                                Start Camera
+                            </span>
+                        </button>
+                    </div>
+                )}
+            </div>
+
+            {/* Power Button */}
+            {isCameraOn && (
+                <div className="absolute -bottom-20 left-0 right-0 flex justify-center">
+                    <button 
+                        onClick={togglePower}
+                        className="p-4 bg-slate-100 hover:bg-red-50 text-slate-400 hover:text-red-500 rounded-full transition-all border border-slate-200 shadow-sm"
+                        title="Turn Off Camera"
+                    >
+                        <Power size={24} />
+                    </button>
+                </div>
+            )}
+        </div>
+
+        {/* --- RIGHT COLUMN: INSTRUCTIONS --- */}
+        {/* Removed margins. Grid 'items-center' handles alignment now. */}
+        <div className="flex justify-center lg:justify-end">
+            <div className="bg-slate-50 rounded-[2.5rem] p-10 border border-slate-100 w-full max-w-md">
+                
+                <h3 className="font-bold text-black flex items-center gap-3 mb-8 text-xl">
+                    <Info size={24} className="text-blue-900"/> Instructions
+                </h3>
+
+                <div className="space-y-8">
+                    <div className="flex gap-6 items-start">
+                        <div className="shrink-0 w-10 h-10 bg-white rounded-xl flex items-center justify-center text-slate-900 shadow-sm border border-slate-200 font-bold text-sm">
+                            1
+                        </div>
+                        <div>
+                            <h4 className="font-bold text-slate-800 text-base">Position Face</h4>
+                            <p className="text-sm text-slate-500 mt-2 font-medium leading-relaxed">
+                                Remove masks or sunglasses. Ensure good lighting.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div className="flex gap-6 items-start">
+                        <div className="shrink-0 w-10 h-10 bg-white rounded-xl flex items-center justify-center text-slate-900 shadow-sm border border-slate-200 font-bold text-sm">
+                            2
+                        </div>
+                        <div>
+                            <h4 className="font-bold text-slate-800 text-base">Blink Naturally</h4>
+                            <p className="text-sm text-slate-500 mt-2 font-medium leading-relaxed">
+                                Look at the camera and blink to confirm liveness.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="mt-10 pt-6 border-t border-slate-200">
+                    <div className="flex justify-between items-center text-xs font-bold text-slate-400 uppercase tracking-widest">
+                        <span>Status</span>
+                        <span className="flex items-center gap-2 text-emerald-600">
+                            <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+                            Online
+                        </span>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
       </div>
     </div>
   );
