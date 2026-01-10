@@ -2,6 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { Shield, CheckCircle, AlertTriangle, LogOut } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
+// --- 🌐 API CONFIGURATION ---
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+
 const Vote = () => {
   const navigate = useNavigate();
   const [ballot, setBallot] = useState(null);
@@ -9,16 +12,22 @@ const Vote = () => {
   const [voteStatus, setVoteStatus] = useState('idle'); 
   const [txId, setTxId] = useState("");
 
-  // 1. Fetch Ballot (Updated to /api/v1/ballot)
+  // 1. Fetch Ballot
   useEffect(() => {
     const fetchBallot = async () => {
       const token = localStorage.getItem('token');
       if (!token) return navigate("/");
 
       try {
-        console.log("Fetching ballot from /api/v1/ballot...");
-        const res = await fetch('/api/v1/ballot', { // 👈 Updated Endpoint
-          headers: { 'Authorization': `Bearer ${token}` }
+        console.log(`📡 Fetching ballot from: ${API_BASE_URL}/api/v1/ballot`);
+        
+        const res = await fetch(`${API_BASE_URL}/api/v1/ballot`, {
+          headers: { 
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+            // ✅ CRITICAL FIX: Bypasses Ngrok's "Visit Site" warning page
+            'ngrok-skip-browser-warning': 'true' 
+          }
         });
 
         if (res.status === 403 || res.status === 401) {
@@ -26,10 +35,23 @@ const Vote = () => {
             return navigate("/");
         }
 
+        // Check content type to prevent JSON parse errors on HTML responses
+        const contentType = res.headers.get("content-type");
+        if (!contentType || !contentType.includes("application/json")) {
+            console.error("⚠️ Received non-JSON response from server (likely HTML).");
+            // Determine if it's the ngrok page or a server error
+            const text = await res.text();
+            console.error("Response body:", text.substring(0, 100) + "..."); 
+            throw new Error("Invalid server response. Check console.");
+        }
+
         const data = await res.json();
+        console.log("📦 API RESPONSE RECEIVED:", data); // Check this in console!
+        
         setBallot(data);
+
       } catch (error) {
-        console.error("Ballot Fetch Error:", error);
+        console.error("❌ Ballot Fetch Error:", error);
       } finally {
         setLoading(false);
       }
@@ -37,7 +59,7 @@ const Vote = () => {
     fetchBallot();
   }, [navigate]);
 
-  // 2. Cast Vote (Updated to /api/v1/ballot/cast)
+  // 2. Cast Vote
   const castVote = async (candidateId) => {
     if (!window.confirm("Confirm your vote? This action is permanent.")) return;
 
@@ -45,11 +67,14 @@ const Vote = () => {
     const token = localStorage.getItem('token');
 
     try {
-      const res = await fetch('/api/v1/ballot/cast', { // 👈 Updated Endpoint
+      // ✅ UPDATED URL
+      const res = await fetch(`${API_BASE_URL}/api/v1/ballot/cast`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${token}`,
+          // ✅ Also need this header here just in case
+          'ngrok-skip-browser-warning': 'true' 
         },
         body: JSON.stringify({ candidate_id: candidateId })
       });
@@ -74,7 +99,11 @@ const Vote = () => {
       navigate("/");
   };
 
-  if (loading) return <div className="min-h-screen bg-slate-900 flex items-center justify-center text-slate-500">Loading Ballot...</div>;
+  if (loading) return (
+    <div className="min-h-screen bg-slate-900 flex items-center justify-center text-slate-500 font-mono">
+        Loading Ballot Data...
+    </div>
+  );
 
   if (voteStatus === 'success') {
       return (
@@ -99,62 +128,74 @@ const Vote = () => {
             </h1>
         </div>
         <div className="text-right">
-            <p className="text-sm font-bold text-slate-700">Region: <span className="text-orange-600 uppercase">{ballot?.constituency}</span></p>
+            {/* Added ?. checks to prevent crash if ballot is null */}
+            <p className="text-sm font-bold text-slate-700">Region: <span className="text-orange-600 uppercase">{ballot?.constituency || "LOADING..."}</span></p>
             <button onClick={logout} className="text-xs text-red-500 font-bold hover:underline flex items-center justify-end gap-1 mt-1 uppercase">
                 Logout Session
             </button>
         </div>
       </header>
 
+      {/* --- CANDIDATES GRID --- */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
-  {ballot?.candidates?.map((candidate) => (
-    <div key={candidate.id} className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden hover:shadow-xl transition-all group">
-      
-      {/* 1. Image Section */}
-      <div className="h-36 bg-slate-50 flex items-center justify-center p-6 border-b border-slate-100 relative">
-        <img 
-          src={candidate.symbol_url} 
-          alt={candidate.party} 
-          className="h-24 w-24 object-contain group-hover:scale-110 transition-transform duration-300 z-10"
-          onError={(e) => {
-            e.target.style.display = 'none';
-            if(e.target.nextSibling) e.target.nextSibling.style.display = 'flex';
-          }}
-        />
-        <div style={{ display: 'none' }} className="absolute inset-0 flex items-center justify-center">
-          <div className="w-16 h-16 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-2xl font-black">
-            {candidate.party.charAt(0)}
-          </div>
-        </div>
-      </div>
+        {/* Render candidates only if they exist */}
+        {ballot?.candidates?.map((candidate) => (
+            <div key={candidate.id} className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden hover:shadow-xl transition-all group">
+            
+            {/* 1. Image Section */}
+            <div className="h-36 bg-slate-50 flex items-center justify-center p-6 border-b border-slate-100 relative">
+                <img 
+                src={candidate.symbol_url} 
+                alt={candidate.party} 
+                className="h-24 w-24 object-contain group-hover:scale-110 transition-transform duration-300 z-10"
+                onError={(e) => {
+                    e.target.style.display = 'none';
+                    if(e.target.nextSibling) e.target.nextSibling.style.display = 'flex';
+                }}
+                />
+                {/* Fallback Initial if Image Fails */}
+                <div style={{ display: 'none' }} className="absolute inset-0 flex items-center justify-center">
+                <div className="w-16 h-16 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-2xl font-black">
+                    {candidate.party?.charAt(0)}
+                </div>
+                </div>
+            </div>
 
-      {/* 2. Text Content Section (This was missing!) */}
-      <div className="p-6 text-center">
-        <h2 className="text-2xl font-black text-slate-800 tracking-tight">
-          {candidate.name} {/* 👈 Displays Candidate Name */}
-        </h2>
-        <p className="text-sm font-bold text-blue-600 mb-6 uppercase tracking-widest">
-          {candidate.party} {/* 👈 Displays Party Name */}
-        </p>
+            {/* 2. Text Content Section */}
+            <div className="p-6 text-center">
+                <h2 className="text-2xl font-black text-slate-800 tracking-tight">
+                {candidate.name}
+                </h2>
+                <p className="text-sm font-bold text-blue-600 mb-6 uppercase tracking-widest">
+                {candidate.party}
+                </p>
 
-        {/* 3. Vote Action Button */}
-        <button 
-          onClick={() => castVote(candidate.id)}
-          disabled={voteStatus === 'casting'}
-          className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-black shadow-lg shadow-blue-200 transition-all active:scale-95 disabled:bg-slate-300"
-        >
-          {voteStatus === 'casting' ? "COMMITTING..." : "CONFIRM VOTE"}
-        </button>
-      </div>
+                {/* 3. Vote Action Button */}
+                <button 
+                onClick={() => castVote(candidate.id)}
+                disabled={voteStatus === 'casting'}
+                className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-black shadow-lg shadow-blue-200 transition-all active:scale-95 disabled:bg-slate-300"
+                >
+                {voteStatus === 'casting' ? "COMMITTING..." : "CONFIRM VOTE"}
+                </button>
+            </div>
+            
+            </div>
+        ))}
+     </div>
       
-    </div>
-  ))}
-</div>
-      
-      {ballot?.candidates?.length === 0 && (
-          <div className="text-center py-20 bg-white rounded-3xl border-2 border-dashed border-slate-200">
+      {/* --- EMPTY STATE HANDLER --- */}
+      {/* If ballot is loaded BUT candidates array is empty or undefined */}
+      {(!ballot?.candidates || ballot?.candidates?.length === 0) && (
+          <div className="text-center py-20 bg-white rounded-3xl border-2 border-dashed border-slate-200 mt-10">
               <AlertTriangle className="mx-auto mb-4 text-slate-300" size={48}/>
-              <p className="text-slate-500 font-bold">No active candidates found for your constituency.</p>
+              <h3 className="text-lg font-bold text-slate-700">No Candidates Found</h3>
+              <p className="text-slate-500 text-sm mt-2">
+                  There are no active candidates listed for <span className="font-bold">{ballot?.constituency || "this region"}</span> yet.
+              </p>
+              <p className="text-xs text-slate-400 mt-4 font-mono">
+                  Debug: {ballot ? "Ballot Data Loaded (Empty List)" : "No Ballot Data Received"}
+              </p>
           </div>
       )}
     </div>

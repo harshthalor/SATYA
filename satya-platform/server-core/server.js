@@ -34,7 +34,7 @@ async function getContract() {
     const gateway = new Gateway();
     await gateway.connect(ccp, {
         wallet,
-        identity: 'appUserV1',
+        identity: 'appUserV2',
         discovery: { enabled: true, asLocalhost: true },
         asLocalhost: true // Crucial for Docker/Colima
     });
