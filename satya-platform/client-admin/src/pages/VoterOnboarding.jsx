@@ -72,7 +72,11 @@ const VoterOnboarding = () => {
       const data = await response.json();
 
       if (response.ok) {
-        setLogState({ message: `Voter Registered Successfully! Hash: ${data.voterId?.substring(0, 12)}...`, type: "success" });
+        // ✅ FIXED: String() converts numbers to text first
+        setLogState({ 
+          message: `Voter Registered Successfully! ID: ${String(data.voterId).substring(0, 12)}...`, 
+          type: "success" 
+        });
       } else {
         if (response.status === 409) {
            setLogState({ message: `Duplicate Entity Detected: ${data.message}`, type: "error" });
