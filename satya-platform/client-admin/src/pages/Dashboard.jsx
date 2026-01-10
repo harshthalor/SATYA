@@ -1,149 +1,181 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { 
-  Globe, 
-  ShieldCheck, 
+import {
+  Globe,
   ArrowRight,
   UserPlus,
   MapPin,
-  FileText, // Icon for Whitepaper
+  FileText,
   Server,
-  Cpu
+  CheckCircle2,
+  Lock,
+  Image as ImageIcon
 } from 'lucide-react';
 
 const Dashboard = () => {
   return (
-    <div className="min-h-screen bg-slate-50 font-sans text-slate-900 pb-20 animate-in fade-in duration-700">
-      
-      {/* --- HERO SECTION (Kept as previous) --- */}
-      <div className="bg-white border-b border-slate-200">
-        <div className="max-w-6xl mx-auto px-8 py-20 flex flex-col md:flex-row items-center gap-12">
-          
-          <div className="flex-1 space-y-6">
-            <div className="inline-flex items-center gap-2 px-3 py-1 bg-blue-50 border border-blue-100 text-blue-700 text-xs font-bold rounded-full uppercase tracking-widest">
-              <Globe size={12} /> National Voter Registry
-            </div>
-            
-            <h1 className="text-5xl md:text-7xl font-black text-slate-900 tracking-tight leading-[1.1]">
-              One Nation.<br/>
-              <span className="text-blue-600">
-                One Identity.
-              </span>
-            </h1>
-            
-            <p className="text-lg text-slate-500 leading-relaxed max-w-lg font-medium">
-              Welcome to the SATYA Admin Node. This portal provides authorized access to the distributed ledger for voter onboarding, constituency migration, and real-time election monitoring.
-            </p>
+    <div className="w-full relative">
 
-            <div className="flex gap-4 pt-4">
-              <Link to="/register" className="bg-slate-900 text-white px-8 py-4 rounded-xl font-bold hover:bg-slate-800 transition-all flex items-center gap-2 shadow-lg shadow-slate-200">
-                Begin Onboarding <ArrowRight size={16} />
-              </Link>
-              <div className="flex items-center gap-3 px-4">
-                 <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
-                 <div className="text-xs font-bold text-slate-500 uppercase tracking-widest">
-                    Node Active<br/>v2.4.0-stable
-                 </div>
-              </div>
-            </div>
+      {/* --- SOFT BACKGROUND ACCENT --- */}
+      <div className="absolute -top-20 right-0 w-[500px] h-[500px] bg-sky-300/30 rounded-full blur-3xl -z-10"></div>
+      <div className="absolute top-40 left-[-100px] w-[300px] h-[300px] bg-sky-200/40 rounded-full blur-3xl -z-10"></div>
+
+      {/* ================= HERO SECTION ================= */}
+      <div className="grid md:grid-cols-2 gap-12 items-center mb-20">
+
+        {/* LEFT CONTENT */}
+        <div className="space-y-6">
+          <div className="inline-flex items-center gap-2 px-3 py-1 bg-sky-50 border border-sky-200 text-sky-700 text-xs font-bold rounded-full uppercase tracking-widest shadow-sm">
+            <Globe size={14} /> National Voter Infrastructure
           </div>
 
-          {/* Visual: Admin Control Hub */}
-          <div className="flex-1 flex justify-center relative">
-             <div className="w-[500px] h-[500px] bg-blue-100/50 rounded-full blur-3xl absolute -z-0 opacity-60"></div>
-             
-             <div className="relative z-10 grid grid-cols-2 gap-4 max-w-sm">
-                <div className="bg-white p-6 rounded-2xl shadow-lg border border-slate-100 flex flex-col gap-4">
-                   <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center text-blue-600">
-                      <Cpu size={20} />
-                   </div>
-                   <div>
-                      <p className="text-2xl font-black text-slate-900">12ms</p>
-                      <p className="text-xs font-bold text-slate-400 uppercase">Latency</p>
-                   </div>
-                </div>
+          <h1 className="text-4xl md:text-5xl font-extrabold leading-tight text-slate-900">
+            {/* Both lines now match the primary text color */}
+            One Nation.<br />
+            One Identity.
+          </h1>
 
-                <div className="bg-slate-900 p-6 rounded-2xl shadow-lg border border-slate-800 flex flex-col gap-4 text-white">
-                   <div className="w-10 h-10 bg-slate-800 rounded-lg flex items-center justify-center text-emerald-400">
-                      <ShieldCheck size={20} />
-                   </div>
-                   <div>
-                      <p className="text-2xl font-black">AES-256</p>
-                      <p className="text-xs font-bold text-slate-500 uppercase">Encryption</p>
-                   </div>
-                </div>
+          <p className="text-lg text-slate-600 leading-relaxed max-w-lg">
+            <span className="font-bold text-slate-800">SATYA</span> is a secure and transparent
+            voter registry designed to protect election integrity while supporting citizen mobility.
+          </p>
 
-                <div className="col-span-2 bg-white p-6 rounded-2xl shadow-lg border border-slate-100 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                        <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
-                        <span className="font-bold text-slate-700">Hyperledger Fabric Consensus</span>
-                    </div>
-                    <Server size={18} className="text-slate-400" />
-                </div>
-             </div>
-          </div>
-
-        </div>
-      </div>
-
-      {/* --- ADMIN MODULES SECTION --- */}
-      <div className="max-w-6xl mx-auto px-8 py-16">
-        <div className="flex items-end justify-between mb-10">
-            <div>
-                <h2 className="text-3xl font-black text-slate-900">Platform Modules</h2>
-                <p className="text-slate-500 font-medium mt-1">Select an administrative function to proceed.</p>
-            </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            
-            {/* Card 1: Registration */}
-            <Link to="/register" className="group bg-white p-8 rounded-3xl border border-slate-200 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
-                <div className="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-blue-600 transition-colors">
-                    <UserPlus size={28} className="text-blue-600 group-hover:text-white transition-colors" />
-                </div>
-                <h3 className="text-xl font-bold text-slate-900 mb-2">Voter Registration</h3>
-                <p className="text-sm text-slate-500 leading-relaxed font-medium">
-                    Onboard new citizens using biometric facial verification and generate their unique blockchain identity.
-                </p>
-                <div className="mt-6 flex items-center gap-2 text-xs font-bold text-blue-600 uppercase tracking-widest group-hover:underline">
-                    Access Module <ArrowRight size={12} />
-                </div>
-            </Link>
-
-            {/* Card 2: Migration */}
-            <Link to="/update" className="group bg-white p-8 rounded-3xl border border-slate-200 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
-                <div className="w-14 h-14 bg-indigo-50 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-indigo-600 transition-colors">
-                    <MapPin size={28} className="text-indigo-600 group-hover:text-white transition-colors" />
-                </div>
-                <h3 className="text-xl font-bold text-slate-900 mb-2">Constituency Migration</h3>
-                <p className="text-sm text-slate-500 leading-relaxed font-medium">
-                    Update a voter's constituency in real-time. Smart contracts handle the transfer of voting rights instantly.
-                </p>
-                <div className="mt-6 flex items-center gap-2 text-xs font-bold text-indigo-600 uppercase tracking-widest group-hover:underline">
-                    Access Module <ArrowRight size={12} />
-                </div>
-            </Link>
-
-            {/* Card 3: Whitepaper (Replaces Live Ledger) */}
-            <a href="#" className="group bg-white p-8 rounded-3xl border border-slate-200 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
-                <div className="w-14 h-14 bg-slate-100 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-slate-900 transition-colors">
-                    <FileText size={28} className="text-slate-600 group-hover:text-white transition-colors" />
-                </div>
-                <h3 className="text-xl font-bold text-slate-900 mb-2">Read Whitepaper</h3>
-                <p className="text-sm text-slate-500 leading-relaxed font-medium">
-                    Access the complete technical documentation, architecture diagrams, and security protocols of SATYA.
-                </p>
-                <div className="mt-6 flex items-center gap-2 text-xs font-bold text-slate-600 uppercase tracking-widest group-hover:underline">
-                    <a href="https://harshthalor.github.io/SATYA/ABOUT/" className="flex items-center gap-1">
-                        View <ArrowRight size={12} />
-                    </a>
-                </div>
+          <div className="flex flex-wrap gap-4 pt-2">
+            <a
+              href="https://harshthalor.github.io/SATYA/ABOUT/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="bg-sky-600 text-white px-6 py-3 rounded-full font-semibold hover:bg-sky-700 transition flex items-center gap-2 shadow-lg shadow-sky-600/20"
+            >
+              <FileText size={18} /> Project Overview
             </a>
 
+            <div className="flex items-center gap-2 px-5 py-3 bg-white rounded-full border border-sky-200 text-sm font-semibold text-slate-600 shadow-sm">
+              <span className="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-pulse"></span>
+              System Active
+            </div>
+          </div>
+        </div>
+
+        {/* RIGHT – HERO IMAGE SPACE */}
+        <div className="flex justify-center md:justify-end">
+          {/* 👇 REPLACE THIS DIV WITH YOUR HERO IMAGE 👇 */}
+          <div className="w-full max-w-md aspect-[4/3] bg-white border-2 border-dashed border-sky-200 rounded-3xl flex flex-col items-center justify-center text-sky-300">
+            <ImageIcon size={48} className="mb-2 opacity-50" />
+            <span className="font-semibold text-sky-400">HERO IMAGE HERE</span>
+            <span className="text-xs text-sky-300">(Your Project Illustration)</span>
+          </div>
+          {/* 👆 END PLACEHOLDER 👆 */}
         </div>
       </div>
 
+      {/* ================= STATS SECTION ================= */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-20">
+        
+        <div className="bg-white p-6 rounded-2xl border border-sky-100 shadow-sm hover:border-sky-300 transition">
+          <Server className="text-sky-600 mb-3 h-8 w-8" />
+          <p className="text-3xl font-bold text-slate-900">Secure</p>
+          <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+            Database Storage
+          </p>
+        </div>
+
+        <div className="bg-white p-6 rounded-2xl border border-sky-100 shadow-sm hover:border-sky-300 transition">
+          <Lock className="text-sky-600 mb-3 h-8 w-8" />
+          <p className="text-xl font-bold text-slate-900">AES-256</p>
+          <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+            Encryption Standard
+          </p>
+        </div>
+
+        <div className="bg-white p-6 rounded-2xl border border-sky-100 shadow-sm flex items-center justify-between hover:border-sky-300 transition">
+          <div>
+            <p className="font-bold text-slate-900 text-lg">Blockchain Ledger</p>
+            <p className="text-xs text-slate-500 uppercase tracking-wider mt-1">
+              Consensus Verified
+            </p>
+          </div>
+          <CheckCircle2 className="text-emerald-500 h-10 w-10" />
+        </div>
+
+      </div>
+
+      {/* ================= ADMIN MODULES ================= */}
+      <div className="pb-12">
+        <div className="text-center mb-12">
+          <h2 className="text-2xl md:text-3xl font-extrabold text-slate-900 mb-2">Administrative Modules</h2>
+          <div className="w-12 h-1 bg-sky-500 mx-auto rounded-full mb-3"></div>
+          <p className="text-slate-600">
+            Select an operation to manage the SATYA registry.
+          </p>
+        </div>
+
+        <div className="grid md:grid-cols-2 gap-8">
+
+          {/* MODULE 1: REGISTRATION */}
+          <Link
+            to="/register"
+            className="group bg-white p-8 rounded-3xl border border-sky-100 hover:border-sky-400 hover:shadow-xl hover:shadow-sky-200/40 transition duration-300"
+          >
+            {/* 👇 IMAGE PLACEHOLDER 👇 */}
+            <div className="w-full h-48 bg-sky-50 border-2 border-dashed border-sky-200 rounded-2xl mb-6 flex flex-col items-center justify-center text-sky-300 group-hover:bg-sky-100/50 transition">
+              <ImageIcon size={32} className="mb-2 opacity-50" />
+              <span className="text-xs font-bold text-sky-400">REGISTRATION IMAGE</span>
+            </div>
+            {/* 👆 END PLACEHOLDER 👆 */}
+
+            <div className="flex items-start justify-between">
+              <div>
+                <div className="w-12 h-12 bg-sky-100 rounded-xl flex items-center justify-center mb-4 text-sky-600">
+                  <UserPlus size={24} />
+                </div>
+                <h3 className="text-xl font-bold text-slate-900 mb-2 group-hover:text-sky-600 transition">
+                  Voter Registration
+                </h3>
+                <p className="text-slate-500 text-sm mb-4 leading-relaxed">
+                  Register new citizens and generate secure digital voter identities.
+                </p>
+              </div>
+            </div>
+
+            <span className="inline-flex items-center gap-2 font-bold text-sm text-sky-600 group-hover:translate-x-1 transition-transform">
+              Open Module <ArrowRight size={16} />
+            </span>
+          </Link>
+
+          {/* MODULE 2: UPDATE */}
+          <Link
+            to="/update"
+            className="group bg-white p-8 rounded-3xl border border-sky-100 hover:border-sky-400 hover:shadow-xl hover:shadow-sky-200/40 transition duration-300"
+          >
+             {/* 👇 IMAGE PLACEHOLDER 👇 */}
+             <div className="w-full h-48 bg-sky-50 border-2 border-dashed border-sky-200 rounded-2xl mb-6 flex flex-col items-center justify-center text-sky-300 group-hover:bg-sky-100/50 transition">
+              <ImageIcon size={32} className="mb-2 opacity-50" />
+              <span className="text-xs font-bold text-sky-400">UPDATE IMAGE</span>
+            </div>
+            {/* 👆 END PLACEHOLDER 👆 */}
+
+            <div className="flex items-start justify-between">
+              <div>
+                <div className="w-12 h-12 bg-sky-100 rounded-xl flex items-center justify-center mb-4 text-sky-600">
+                  <MapPin size={24} />
+                </div>
+                <h3 className="text-xl font-bold text-slate-900 mb-2 group-hover:text-sky-600 transition">
+                  Constituency Update
+                </h3>
+                <p className="text-slate-500 text-sm mb-4 leading-relaxed">
+                  Transfer voter records securely across constituencies using face auth.
+                </p>
+              </div>
+            </div>
+
+            <span className="inline-flex items-center gap-2 font-bold text-sm text-sky-600 group-hover:translate-x-1 transition-transform">
+              Open Module <ArrowRight size={16} />
+            </span>
+          </Link>
+
+        </div>
+      </div>
     </div>
   );
 };

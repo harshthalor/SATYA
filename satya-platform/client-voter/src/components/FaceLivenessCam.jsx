@@ -87,13 +87,13 @@ const FaceLivenessCam = ({ onCapture, isProcessing }) => {
   }, [modelLoaded, status, checkLiveness]);
 
   return (
-    <div className="relative w-full h-full rounded-full overflow-hidden border-4 border-slate-700 bg-black shadow-2xl">
+    <div className="relative w-full h-full overflow-hidden border-4 border-slate-700 bg-black shadow-2xl">
       <Webcam
         ref={webcamRef}
         screenshotFormat="image/jpeg"
         className="w-full h-full object-cover"
         videoConstraints={{ width: 480, height: 480, facingMode: "user" }}
-        style={{ objectPosition: 'center center', transform: 'scaleX(-1)' }}
+        style={{ objectPosition: 'center center', transform: 'scaleX(-1)', display: 'block' }}
       />
       
       {/* DEBUG OVERLAY */}
@@ -126,7 +126,7 @@ const FaceLivenessCam = ({ onCapture, isProcessing }) => {
         )}
 
         {(status === 'verified' || isProcessing) && (
-            <div className="text-green-400 flex flex-col items-center animate-in fade-in bg-black/60 p-6 rounded-full">
+          <div className="text-green-400 flex flex-col items-center animate-in fade-in bg-black/60 p-6">
                 <CheckCircle size={48} className="mb-2" />
                 <span className="text-sm font-bold">Verified</span>
             </div>
