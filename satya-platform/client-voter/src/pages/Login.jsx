@@ -92,7 +92,7 @@ const Login = () => {
                     object-fit: cover !important;
                     object-position: center center !important;
                     transform: scaleX(-1);
-                    border-radius: 50%;
+                    border-radius: 0 !important;
                     display: block;
                 }
             `}</style>
@@ -131,8 +131,8 @@ const Login = () => {
         {/* Removed margins. Grid automatically centers this column vertically. */}
         <div className="flex justify-center relative z-20">
             
-            {/* Camera Circle */}
-            <div className="relative w-80 h-80 rounded-full overflow-hidden shadow-2xl border-[8px] border-white bg-black ring-1 ring-slate-200 camera-circle">
+            {/* Camera Box (square) */}
+            <div className="relative w-80 h-80 overflow-hidden shadow-2xl border-[8px] border-white bg-black ring-1 ring-slate-200 camera-circle">
                 
                 {/* STATE A: CAMERA IS ON */}
                 {isCameraOn && (
@@ -152,9 +152,9 @@ const Login = () => {
                         {/* Idle */}
                         {status === 'idle' && (
                            <div className="flex flex-col items-center justify-center text-center">
-                              <div className="w-56 h-56 rounded-full border-2 border-dashed border-white/30 flex items-center justify-center mb-6">
-                                 <ScanFace size={56} className="text-white/50" />
-                              </div>
+                                    <div className="w-56 h-56 border-2 border-dashed border-white/30 flex items-center justify-center mb-6">
+                                            <ScanFace size={56} className="text-white/50" />
+                                        </div>
                               <span className="absolute bottom-16 bg-black/50 text-white text-xs font-bold px-4 py-1.5 rounded-full backdrop-blur-md border border-white/10">
                                  Blink to Verify
                               </span>
