@@ -2,6 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { Shield, CheckCircle, AlertTriangle, LogOut } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
+// --- 🌐 API CONFIGURATION ---
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+
 const Vote = () => {
   const navigate = useNavigate();
   const [ballot, setBallot] = useState(null);
@@ -9,15 +12,16 @@ const Vote = () => {
   const [voteStatus, setVoteStatus] = useState('idle'); 
   const [txId, setTxId] = useState("");
 
-  // 1. Fetch Ballot (Updated to /api/v1/ballot)
+  // 1. Fetch Ballot
   useEffect(() => {
     const fetchBallot = async () => {
       const token = localStorage.getItem('token');
       if (!token) return navigate("/");
 
       try {
-        console.log("Fetching ballot from /api/v1/ballot...");
-        const res = await fetch('/api/v1/ballot', { // 👈 Updated Endpoint
+        console.log(`Fetching ballot from ${API_BASE_URL}/api/v1/ballot...`);
+        // ✅ UPDATED URL
+        const res = await fetch(`${API_BASE_URL}/api/v1/ballot`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
 
@@ -37,7 +41,7 @@ const Vote = () => {
     fetchBallot();
   }, [navigate]);
 
-  // 2. Cast Vote (Updated to /api/v1/ballot/cast)
+  // 2. Cast Vote
   const castVote = async (candidateId) => {
     if (!window.confirm("Confirm your vote? This action is permanent.")) return;
 
@@ -45,7 +49,8 @@ const Vote = () => {
     const token = localStorage.getItem('token');
 
     try {
-      const res = await fetch('/api/v1/ballot/cast', { // 👈 Updated Endpoint
+      // ✅ UPDATED URL
+      const res = await fetch(`${API_BASE_URL}/api/v1/ballot/cast`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -90,6 +95,7 @@ const Vote = () => {
       );
   }
 
+  // ... (REST OF THE JSX REMAINS EXACTLY THE SAME) ...
   return (
     <div className="min-h-screen bg-slate-50 p-6">
       <header className="flex justify-between items-center mb-8 bg-white p-4 rounded-xl shadow-sm border border-slate-200">

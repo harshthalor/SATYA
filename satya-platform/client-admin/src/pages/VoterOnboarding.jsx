@@ -12,6 +12,9 @@ import {
 // IMPORT YOUR CAMERA COMPONENT
 import FaceLivenessCam from '../components/FaceLivenessCam'; 
 
+// --- 🌐 API CONFIGURATION ---
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+
 const VoterOnboarding = () => {
   // --- STATE ---
   const [mode, setMode] = useState('idle'); // idle, captured
@@ -63,7 +66,8 @@ const VoterOnboarding = () => {
         base64Image: imgSrc 
       };
 
-      const response = await fetch('http://localhost:8080/api/v1/admin/register-voter', {
+      // ✅ UPDATED URL
+      const response = await fetch(`${API_BASE_URL}/api/v1/admin/register-voter`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -72,7 +76,6 @@ const VoterOnboarding = () => {
       const data = await response.json();
 
       if (response.ok) {
-        // ✅ FIXED: String() converts numbers to text first
         setLogState({ 
           message: `Voter Registered Successfully! ID: ${String(data.voterId).substring(0, 12)}...`, 
           type: "success" 
@@ -104,6 +107,7 @@ const VoterOnboarding = () => {
     setLogState({ message: "Reset Complete. Ready for next applicant.", type: "info" });
   };
 
+  // ... (REST OF THE JSX REMAINS EXACTLY THE SAME) ...
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-950 p-6 flex items-center justify-center font-sans text-slate-800">
       
