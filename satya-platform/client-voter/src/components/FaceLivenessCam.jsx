@@ -87,12 +87,13 @@ const FaceLivenessCam = ({ onCapture, isProcessing }) => {
   }, [modelLoaded, status, checkLiveness]);
 
   return (
-    <div className="relative w-72 h-72 rounded-full overflow-hidden border-4 border-slate-700 bg-black shadow-2xl">
+    <div className="relative w-full h-full rounded-full overflow-hidden border-4 border-slate-700 bg-black shadow-2xl">
       <Webcam
         ref={webcamRef}
         screenshotFormat="image/jpeg"
-        className="w-full h-full object-cover transform scale-x-[-1]"
-        videoConstraints={{ width: 480, height: 480, facingMode: "user" }} 
+        className="w-full h-full object-cover"
+        videoConstraints={{ width: 480, height: 480, facingMode: "user" }}
+        style={{ objectPosition: 'center center', transform: 'scaleX(-1)' }}
       />
       
       {/* DEBUG OVERLAY */}
