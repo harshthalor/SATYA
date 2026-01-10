@@ -24,14 +24,14 @@ async function getContract() {
     const wallet = await Wallets.newFileSystemWallet(walletPath);
     
     // Check if identity exists
-    const identity = await wallet.get('appUserV1');
+    const identity = await wallet.get('appUserV2');
     if (!identity) {
-        throw new Error(`❌ Identity 'appUserV1' not found in wallet at ${walletPath}. Did you run enrollUser.js?`);
+        throw new Error(`❌ Identity 'appUserV2' not found in wallet at ${walletPath}. Did you run enrollUser.js?`);
     }
 
     const gateway = new Gateway();
     await gateway.connect(ccp, {
-        wallet, identity: 'appUserV1', 
+        wallet, identity: 'appUserV2', 
         discovery: { enabled: true, asLocalhost: true }, asLocalhost: true
     });
     
