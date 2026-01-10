@@ -3,188 +3,155 @@
  * Component: API Gateway (server.js)
  * Purpose: The Bridge between the Web and the Blockchain.
  */
-console.log("🚨🚨🚨 I AM THE CORRECT FILE 🚨🚨🚨");
+console.log("🚨🚨🚨 SATYA GATEWAY V3: KAFKA EVENT BACKBONE ENABLED 🚨🚨🚨");
 const express = require('express');
-const bodyParser = require('body-parser');
 const cors = require('cors');
 const { Gateway, Wallets } = require('fabric-network');
 const fs = require('fs');
 const path = require('path');
 
+// ➕ NEW: Import the Kafka Producer
+const { sendVoteToQueue } = require('./kafka/producer');
+
 const app = express();
 
-// Add these BEFORE any routes
 app.use(express.json()); 
 app.use(express.urlencoded({ extended: true }));
-
 app.use(cors());
-// app.use(bodyParser.json()); // You can keep this or remove it, express.json() handles it now
+
 // --- CONFIGURATION ---
 const PORT = 3000;
-const CHANNEL_NAME = 'mychannel'; // Standard default for test-network
-const CHAINCODE_NAME = 'satya';   // Standard default for test-network
+const CHANNEL_NAME = 'mychannel';
+const CHAINCODE_NAME = 'satya';
 
 // --- HELPER FUNCTION: CONNECT TO NETWORK ---
 async function getContract() {
-    // 1. Load the Map (Connection Profile)
     const ccpPath = path.resolve(__dirname, 'connection-org1.json');
     const ccp = JSON.parse(fs.readFileSync(ccpPath, 'utf8'));
-
-    // 2. Load the Wallet (Identity)
     const walletPath = path.join(process.cwd(), 'wallet');
     const wallet = await Wallets.newFileSystemWallet(walletPath);
 
-    // 3. Connect to the Gateway
     const gateway = new Gateway();
     await gateway.connect(ccp, {
         wallet,
-        identity: 'appUserV1', // The user we created earlier
-        discovery: { enabled: true, asLocalhost: true } ,// Crucial for Docker/Colima
-        asLocalhost: true
+        identity: 'appUserV1',
+        discovery: { enabled: true, asLocalhost: true },
+        asLocalhost: true // Crucial for Docker/Colima
     });
 
-    // 4. Get the Network and Contract
     const network = await gateway.getNetwork(CHANNEL_NAME);
     const contract = network.getContract(CHAINCODE_NAME);
 
     return { contract, gateway };
 }
 
-// --- API ENDPOINT 1: READ ASSET (QUERY) ---
-// Usage: GET http://localhost:3000/query/asset1
+// =================================================================
+// 🔐 PHASE 1: TOKEN MANAGEMENT (DIRECT - NO QUEUE NEEDED)
+// =================================================================
+
+// --- API ENDPOINT: MINT VOTE TOKEN ---
+// This remains synchronous because it's an infrequent administrative action
+app.post('/mint-token', async (req, res) => {
+    try {
+        const { electionId, voterID } = req.body;
+        const { contract, gateway } = await getContract();
+
+        console.log(`\n🎫 MINTING TOKEN: Election ${electionId} for Voter ${voterID}`);
+
+        await contract.submitTransaction('MintVoteToken', electionId, voterID);
+        
+        console.log('✅ Token Minted on Ledger');
+        await gateway.disconnect();
+
+        res.status(200).json({ 
+            success: true, 
+            message: `Ballot Token generated for ${voterID}` 
+        });
+    } catch (error) {
+        console.error(`❌ Minting Failed: ${error}`);
+        const status = error.message.includes('already exists') ? 409 : 500;
+        res.status(status).json({ success: false, error: error.message });
+    }
+});
+
+// =================================================================
+// 🚀 PHASE 2: HIGH-THROUGHPUT VOTING (MODIFIED FOR KAFKA)
+// =================================================================
+
+// --- API ENDPOINT: CAST VOTE (QUEUED) ---
+// Usage: POST http://localhost:3000/cast-vote
+app.post('/cast-vote', async (req, res) => {
+    try {
+        // 1. Destructure all arguments
+        const { electionId, voterID, candidateID, candidateState, boothLocation } = req.body;
+        
+        if (!electionId || !voterID || !candidateID || !candidateState) {
+            return res.status(400).json({ error: "Missing required voting fields" });
+        }
+
+        console.log(`\n📥 INCOMING VOTE: ${voterID} -> Queueing...`);
+
+        // 2. 🔥 SEND TO KAFKA PRODUCER (Instead of blocking on Blockchain)
+        // This is instant (~10ms) vs Blockchain (~2000ms)
+        await sendVoteToQueue({
+            electionId, 
+            voterID, 
+            candidateID, 
+            candidateState, 
+            boothLocation
+        });
+
+        // 3. ⚡ INSTANT RESPONSE to Client
+        // The client gets a "Received" status. The actual mining happens in the background.
+        res.status(200).json({ 
+            success: true, 
+            message: `Vote received and queued for processing.`
+        });
+        
+    } catch (error) {
+        console.error(`❌ Queue Failed: ${error}`);
+        res.status(500).json({ success: false, error: "System Busy - Queue Unavailable" });
+    }
+});
+
+// =================================================================
+// 🛠 EXISTING UTILITIES (PRESERVED)
+// =================================================================
+
+// --- QUERY ASSET ---
 app.get('/query/:key', async (req, res) => {
     try {
         const { contract, gateway } = await getContract();
         const result = await contract.evaluateTransaction('ReadVoter', req.params.key);
-        
-        console.log(`Transaction has been evaluated, result is: ${result.toString()}`);
         res.status(200).json({ response: result.toString() });
-        
-        // Disconnect after use to free resources
         await gateway.disconnect();
-        
     } catch (error) {
-        console.error(`Failed to evaluate transaction: ${error}`);
         res.status(500).json({ error: error.message });
     }
 });
 
-// --- API ENDPOINT 2: INITIALIZE LEDGER (FOR TESTING) ---
-// Usage: GET http://localhost:3000/init
-app.get('/init', async (req, res) => {
-    try {
-        const { contract, gateway } = await getContract();
-        console.log('Initializing Ledger...');
-        await contract.submitTransaction('InitLedger');
-        console.log('Ledger initialized');
-        res.send('Ledger Initialized Successfully');
-        await gateway.disconnect();
-    } catch (error) {
-        console.error(`Failed to submit transaction: ${error}`);
-        res.status(500).send(error.message);
-    }
-});
-
-// --- API ENDPOINT 3: CAST VOTE (INVOKE) ---
-// Usage: POST http://localhost:3000/cast-vote
-// --- API ENDPOINT 3: CAST VOTE (INVOKE) ---
-// Usage: POST http://localhost:3000/cast-vote
-app.post('/cast-vote', async (req, res) => {
-    try {
-        // 1. Destructure the NEW 'candidateState' parameter from the request
-        const { voterId, candidateId, candidateState, district } = req.body;
-        const { contract, gateway } = await getContract();
-
-        console.log(`\n--> Submitting Transaction: CastVote for ${voterId} towards ${candidateState}`);
-
-        // 2. Add 'candidateState' to the transaction arguments
-        // Order must match your Chaincode: voterID, candidateID, candidateState, boothLocation
-        const result = await contract.submitTransaction(
-            'CastVote', 
-            voterId, 
-            candidateId, 
-            candidateState, 
-            district
-        );
-        
-        await gateway.disconnect();
-
-        res.status(200).json({ 
-            success: true, 
-            txId: result.toString(), 
-            message: `Vote successfully validated and cast for voter ${voterId}`
-        });
-    } catch (error) {
-        console.error(`Failed to cast vote: ${error}`);
-        res.status(500).json({ success: false, error: error.message });
-    }
-});
-
+// --- REGISTER VOTER (LEGACY / DIRECT) ---
 app.post('/register-voter', async (req, res) => {
     try {
         const { voterId, biometricHash, homeState } = req.body;
-
-        // Use curly braces {} to "destructure" the object and get the actual contract
         const { contract, gateway } = await getContract(); 
-
-        console.log(`\n--> Submitting Transaction: CreateVoter for ${voterId}`);
-        
-        // Now 'contract' is the actual Fabric object, so this will work
+        console.log(`\n--> Registering Voter: ${voterId}`);
         await contract.submitTransaction('CreateVoter', voterId, biometricHash, homeState);
-        
-        console.log('*** Transaction committed successfully');
-
-        // Always disconnect the gateway to free up the connection
         await gateway.disconnect();
-
-        res.status(200).json({ 
-            success: true, 
-            message: `Voter ${voterId} registered successfully` 
-        });
-
+        res.status(200).json({ success: true, message: `Voter ${voterId} registered successfully` });
     } catch (error) {
         console.error(`Failed to register voter: ${error}`);
         res.status(500).json({ success: false, error: error.message });
     }
 });
-// --- API ENDPOINT 4: READ ALL ASSETS (FOR RESULTS) ---
-// Usage: GET http://localhost:3000/query-all
-app.get('/query-all', async (req, res) => {
-    try {
-        const { contract, gateway } = await getContract();
-        
-        console.log("📊 Fetching all ledger data for tallying...");
-        
-        // This calls the standard Fabric function to get every single asset
-        const result = await contract.evaluateTransaction('GetAllAssets');
-        
-        console.log(`Data fetched successfully.`);
-        
-        res.status(200).json({ 
-            success: true, 
-            data: JSON.parse(result.toString()) 
-        });
-        
-        await gateway.disconnect();
-        
-    } catch (error) {
-        console.error(`Failed to fetch all assets: ${error}`);
-        // If 'GetAllAssets' doesn't exist in your chaincode, this will print the specific error
-        res.status(500).json({ error: error.message });
-    }
-});
 
-// --- API ENDPOINT: BULK REGISTER (PHASE 3) ---
+// --- BULK REGISTER ---
 app.post('/bulk-register', async (req, res) => {
     try {
-        const { votersList } = req.body; // Expecting an array of voter objects
+        const { votersList } = req.body;
         const { contract, gateway } = await getContract();
-
-        console.log(`--> Syncing ${votersList.length} voters from state databases...`);
-        
-        // Convert the array to a string to pass it to the chaincode
+        console.log(`--> Syncing ${votersList.length} voters...`);
         await contract.submitTransaction('BulkRegisterVoters', JSON.stringify(votersList));
-        
         await gateway.disconnect();
         res.status(200).json({ success: true, message: "State sync complete." });
     } catch (error) {
@@ -192,39 +159,45 @@ app.post('/bulk-register', async (req, res) => {
     }
 });
 
-// --- ROUTE: CHANGE STATE (MOBILITY) ---
+// --- MOBILITY CHANGE ---
 app.post('/change-state', async (req, res) => {
     try {
         const { voterId, newState, newConstituencyId } = req.body;
-
-        if (!voterId || !newState || !newConstituencyId) {
-             console.log("❌ Missing Data:", req.body);
-             return res.status(400).json({ error: "Missing VoterID, State, or Constituency ID" });
-        }
-
         const { contract, gateway } = await getContract();
-
-        console.log(`\n--> Request: Moving ${voterId} to ${newState}`);
-        console.log(`--> Setting home_constituency_id to: ${newConstituencyId}`);
-
-        // Submit to Blockchain
+        console.log(`\n--> Moving ${voterId} to ${newState}`);
         await contract.submitTransaction('TransferVoter', voterId, newState, newConstituencyId);
-
-        console.log('✅ Transfer Committed successfully');
         await gateway.disconnect();
-
-        res.status(200).json({
-            success: true,
-            message: `Moved to ${newState} (Const ID: ${newConstituencyId})`
-        });
-
+        res.status(200).json({ success: true, message: `Moved to ${newState}` });
     } catch (error) {
         console.error(`❌ Transfer Failed: ${error}`);
         res.status(500).json({ error: error.message });
     }
 });
 
-// --- START SERVER ---
+// --- QUERY ALL ---
+app.get('/query-all', async (req, res) => {
+    try {
+        const { contract, gateway } = await getContract();
+        const result = await contract.evaluateTransaction('GetAllAssets');
+        res.status(200).json({ success: true, data: JSON.parse(result.toString()) });
+        await gateway.disconnect();
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// --- INIT LEDGER ---
+app.get('/init', async (req, res) => {
+    try {
+        const { contract, gateway } = await getContract();
+        await contract.submitTransaction('InitLedger');
+        res.send('Ledger Initialized Successfully');
+        await gateway.disconnect();
+    } catch (error) {
+        res.status(500).send(error.message);
+    }
+});
+
 app.listen(PORT, () => {
     console.log(`✅ SATYA Gateway running on http://localhost:${PORT}`);
 });

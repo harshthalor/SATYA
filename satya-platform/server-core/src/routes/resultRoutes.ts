@@ -43,7 +43,7 @@ router.get('/:constituencyId', async (req: any, res: any) => {
             
             // Check if it is a Ballot AND belongs to this constituency
             // Note: We check record.docType === 'ballot' to avoid counting voters as votes
-            if (record.docType === 'ballot' && record.homeState === (constituencyId === '1' ? 'Delhi' : 'Mumbai')) {
+            if (record.docType === 'ballot' && record.state === (constituencyId === '1' ? 'Delhi' : 'Mumbai')) {
                 const votedForId = record.candidateID;
                 if (tallyMap[votedForId] !== undefined) {
                     tallyMap[votedForId]++;
