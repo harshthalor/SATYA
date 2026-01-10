@@ -6,6 +6,7 @@ import {
   ScanFace, 
   ShieldCheck, 
   User, 
+  Activity,
   Loader2, 
   ChevronRight,
   Hash,
@@ -132,6 +133,7 @@ const UpdateConstituency = () => {
     setFormData({ ...formData, voterId: '' });
     addLog("System reset. Ready for next applicant.", "neutral");
   };
+
   // ... (REST OF THE JSX REMAINS EXACTLY THE SAME - SKIPPING FOR BREVITY) ...
   // Paste the return (...) block from your original code here
   return (
