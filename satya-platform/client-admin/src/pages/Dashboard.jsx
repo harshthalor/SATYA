@@ -1,162 +1,151 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React from 'react';
+import { Link } from 'react-router-dom';
 import { 
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell 
-} from 'recharts';
-import { Vote, Users, Server, Activity, MapPin, RefreshCw } from 'lucide-react';
+  Globe, 
+  ShieldCheck, 
+  ArrowRight,
+  UserPlus,
+  MapPin,
+  FileText, // Icon for Whitepaper
+  Server,
+  Cpu
+} from 'lucide-react';
 
 const Dashboard = () => {
-  const [data, setData] = useState([]);
-  const [totalVotes, setTotalVotes] = useState(0);
-  const [constituency, setConstituency] = useState(1);
-  const [loading, setLoading] = useState(false);
-  const [lastUpdated, setLastUpdated] = useState(new Date());
-
-  // --- FETCH DATA FUNCTION (Wrapped in useCallback) ---
-  const fetchLiveStats = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await fetch(`http://localhost:8080/api/v1/results/${constituency}`);
-      if (!res.ok) throw new Error("Failed to fetch");
-      
-      const realData = await res.json();
-      
-      setData(realData);
-      const total = realData.reduce((acc, curr) => acc + curr.votes, 0);
-      setTotalVotes(total);
-      setLastUpdated(new Date());
-    } catch (error) {
-      console.log("Connection error...", error);
-    } finally {
-      setLoading(false);
-    }
-  }, [constituency]);
-
-  // --- EFFECT: Initial Load + 5 Minute Timer ---
-  useEffect(() => {
-    fetchLiveStats();
-    
-    // Auto-refresh every 1.67 minutes (100,000 ms)
-    const interval = setInterval(fetchLiveStats, 100000);
-    return () => clearInterval(interval);
-  }, [fetchLiveStats]);
-
   return (
-    <div className="min-h-screen bg-slate-50 p-8 font-sans">
-      <header className="mb-8 flex justify-between items-end">
-        <div>
-          <h1 className="text-3xl font-black text-slate-900 tracking-tight">ELECTION COMMAND CENTER</h1>
-          <p className="text-sm font-bold text-slate-500 flex items-center gap-2 mt-2">
-            <Activity size={16} className="text-green-600" /> 
-            Last Synced: {lastUpdated.toLocaleTimeString()}
-          </p>
-        </div>
-        
-        <div className="flex gap-4">
-            {/* MANUAL REFRESH BUTTON */}
-            <button 
-                onClick={fetchLiveStats}
-                disabled={loading}
-                className="bg-white px-4 py-2 rounded-xl border border-slate-200 text-slate-600 font-bold flex items-center gap-2 hover:bg-slate-50 hover:text-blue-600 transition-all active:scale-95 disabled:opacity-50"
-            >
-                <RefreshCw size={18} className={loading ? "animate-spin" : ""} />
-                {loading ? "Syncing..." : "Sync Now"}
-            </button>
+    <div className="min-h-screen bg-slate-50 font-sans text-slate-900 pb-20 animate-in fade-in duration-700">
+      
+      {/* --- HERO SECTION (Kept as previous) --- */}
+      <div className="bg-white border-b border-slate-200">
+        <div className="max-w-6xl mx-auto px-8 py-20 flex flex-col md:flex-row items-center gap-12">
+          
+          <div className="flex-1 space-y-6">
+            <div className="inline-flex items-center gap-2 px-3 py-1 bg-blue-50 border border-blue-100 text-blue-700 text-xs font-bold rounded-full uppercase tracking-widest">
+              <Globe size={12} /> National Voter Registry
+            </div>
+            
+            <h1 className="text-5xl md:text-7xl font-black text-slate-900 tracking-tight leading-[1.1]">
+              One Nation.<br/>
+              <span className="text-blue-600">
+                One Identity.
+              </span>
+            </h1>
+            
+            <p className="text-lg text-slate-500 leading-relaxed max-w-lg font-medium">
+              Welcome to the SATYA Admin Node. This portal provides authorized access to the distributed ledger for voter onboarding, constituency migration, and real-time election monitoring.
+            </p>
 
-            {/* Constituency Toggle */}
-            <div className="flex bg-white p-1 rounded-xl border border-slate-200 shadow-sm">
-                <button 
-                    onClick={() => setConstituency(1)}
-                    className={`px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition-all ${
-                    constituency === 1 ? 'bg-blue-600 text-white shadow-md' : 'text-slate-500 hover:bg-slate-50'
-                    }`}
-                >
-                    <MapPin size={16}/> Delhi
-                </button>
-                <button 
-                    onClick={() => setConstituency(2)}
-                    className={`px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition-all ${
-                    constituency === 2 ? 'bg-blue-600 text-white shadow-md' : 'text-slate-500 hover:bg-slate-50'
-                    }`}
-                >
-                    <MapPin size={16}/> Mumbai
-                </button>
+            <div className="flex gap-4 pt-4">
+              <Link to="/register" className="bg-slate-900 text-white px-8 py-4 rounded-xl font-bold hover:bg-slate-800 transition-all flex items-center gap-2 shadow-lg shadow-slate-200">
+                Begin Onboarding <ArrowRight size={16} />
+              </Link>
+              <div className="flex items-center gap-3 px-4">
+                 <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+                 <div className="text-xs font-bold text-slate-500 uppercase tracking-widest">
+                    Node Active<br/>v2.4.0-stable
+                 </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Visual: Admin Control Hub */}
+          <div className="flex-1 flex justify-center relative">
+             <div className="w-[500px] h-[500px] bg-blue-100/50 rounded-full blur-3xl absolute -z-0 opacity-60"></div>
+             
+             <div className="relative z-10 grid grid-cols-2 gap-4 max-w-sm">
+                <div className="bg-white p-6 rounded-2xl shadow-lg border border-slate-100 flex flex-col gap-4">
+                   <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center text-blue-600">
+                      <Cpu size={20} />
+                   </div>
+                   <div>
+                      <p className="text-2xl font-black text-slate-900">12ms</p>
+                      <p className="text-xs font-bold text-slate-400 uppercase">Latency</p>
+                   </div>
+                </div>
+
+                <div className="bg-slate-900 p-6 rounded-2xl shadow-lg border border-slate-800 flex flex-col gap-4 text-white">
+                   <div className="w-10 h-10 bg-slate-800 rounded-lg flex items-center justify-center text-emerald-400">
+                      <ShieldCheck size={20} />
+                   </div>
+                   <div>
+                      <p className="text-2xl font-black">AES-256</p>
+                      <p className="text-xs font-bold text-slate-500 uppercase">Encryption</p>
+                   </div>
+                </div>
+
+                <div className="col-span-2 bg-white p-6 rounded-2xl shadow-lg border border-slate-100 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
+                        <span className="font-bold text-slate-700">Hyperledger Fabric Consensus</span>
+                    </div>
+                    <Server size={18} className="text-slate-400" />
+                </div>
+             </div>
+          </div>
+
+        </div>
+      </div>
+
+      {/* --- ADMIN MODULES SECTION --- */}
+      <div className="max-w-6xl mx-auto px-8 py-16">
+        <div className="flex items-end justify-between mb-10">
+            <div>
+                <h2 className="text-3xl font-black text-slate-900">Platform Modules</h2>
+                <p className="text-slate-500 font-medium mt-1">Select an administrative function to proceed.</p>
             </div>
         </div>
-      </header>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <StatCard 
-          icon={<Vote />} 
-          label={`Votes in ${constituency === 1 ? 'Delhi' : 'Mumbai'}`} 
-          value={totalVotes} 
-          color="bg-blue-600" 
-        />
-        <StatCard 
-          icon={<Users />} 
-          label="Active Nodes" 
-          value="3" 
-          color="bg-orange-500" 
-        />
-        <StatCard 
-          icon={<Server />} 
-          label="Blocks Mined" 
-          value={`#${Math.floor(Date.now() / 100000).toString().slice(-4)}`} 
-          color="bg-slate-700" 
-        />
-      </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            
+            {/* Card 1: Registration */}
+            <Link to="/register" className="group bg-white p-8 rounded-3xl border border-slate-200 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+                <div className="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-blue-600 transition-colors">
+                    <UserPlus size={28} className="text-blue-600 group-hover:text-white transition-colors" />
+                </div>
+                <h3 className="text-xl font-bold text-slate-900 mb-2">Voter Registration</h3>
+                <p className="text-sm text-slate-500 leading-relaxed font-medium">
+                    Onboard new citizens using biometric facial verification and generate their unique blockchain identity.
+                </p>
+                <div className="mt-6 flex items-center gap-2 text-xs font-bold text-blue-600 uppercase tracking-widest group-hover:underline">
+                    Access Module <ArrowRight size={12} />
+                </div>
+            </Link>
 
-      {/* Main Chart */}
-      <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-200 h-[500px] relative">
-        <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-bold text-slate-800">Live Tally</h2>
-            {loading && <span className="text-xs font-bold text-blue-600 bg-blue-50 px-3 py-1 rounded-full animate-pulse">Fetching Blockchain Data...</span>}
-        </div>
-        
-        <div className="w-full h-[400px]">
-          <ResponsiveContainer>
-            <BarChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-              <XAxis 
-                dataKey="name" 
-                axisLine={false} 
-                tickLine={false} 
-                tick={{fill: '#64748b', fontSize: 12, fontWeight: 'bold'}}
-                dy={10}
-              />
-              <YAxis 
-                axisLine={false} 
-                tickLine={false} 
-                tick={{fill: '#64748b', fontSize: 12}}
-              />
-              <Tooltip 
-                cursor={{ fill: '#f8fafc' }}
-                contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
-              />
-              <Bar dataKey="votes" radius={[8, 8, 0, 0]} barSize={60} animationDuration={1000}>
-                {data.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.fill || entry.color} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
+            {/* Card 2: Migration */}
+            <Link to="/update" className="group bg-white p-8 rounded-3xl border border-slate-200 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+                <div className="w-14 h-14 bg-indigo-50 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-indigo-600 transition-colors">
+                    <MapPin size={28} className="text-indigo-600 group-hover:text-white transition-colors" />
+                </div>
+                <h3 className="text-xl font-bold text-slate-900 mb-2">Constituency Migration</h3>
+                <p className="text-sm text-slate-500 leading-relaxed font-medium">
+                    Update a voter's constituency in real-time. Smart contracts handle the transfer of voting rights instantly.
+                </p>
+                <div className="mt-6 flex items-center gap-2 text-xs font-bold text-indigo-600 uppercase tracking-widest group-hover:underline">
+                    Access Module <ArrowRight size={12} />
+                </div>
+            </Link>
+
+            {/* Card 3: Whitepaper (Replaces Live Ledger) */}
+            <a href="#" className="group bg-white p-8 rounded-3xl border border-slate-200 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+                <div className="w-14 h-14 bg-slate-100 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-slate-900 transition-colors">
+                    <FileText size={28} className="text-slate-600 group-hover:text-white transition-colors" />
+                </div>
+                <h3 className="text-xl font-bold text-slate-900 mb-2">Read Whitepaper</h3>
+                <p className="text-sm text-slate-500 leading-relaxed font-medium">
+                    Access the complete technical documentation, architecture diagrams, and security protocols of SATYA.
+                </p>
+                <div className="mt-6 flex items-center gap-2 text-xs font-bold text-slate-600 uppercase tracking-widest group-hover:underline">
+                    <a href="https://harshthalor.github.io/SATYA/ABOUT/" className="flex items-center gap-1">
+                        View <ArrowRight size={12} />
+                    </a>
+                </div>
+            </a>
+
         </div>
       </div>
+
     </div>
   );
 };
-
-// Simple Card Component
-const StatCard = ({ icon, label, value, color }) => (
-  <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex items-center gap-4 transition-transform hover:scale-105">
-    <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-white shadow-lg ${color}`}>
-      {icon}
-    </div>
-    <div>
-      <p className="text-slate-400 text-xs font-bold uppercase tracking-wider">{label}</p>
-      <h3 className="text-3xl font-black text-slate-800">{value}</h3>
-    </div>
-  </div>
-);
 
 export default Dashboard;

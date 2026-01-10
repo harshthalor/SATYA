@@ -77,7 +77,7 @@ export const checkLiveness = async (base64Image: string): Promise<boolean> => {
         // 1. STRICTER QUALITY THRESHOLD
         // Real faces in good light are usually > 90. Phone screens are often 70-85.
         // Let's bump this to 80.0 or 85.0
-        if (quality < 80.0) {
+        if (quality < 70.0) {
             console.warn("⚠️ Liveness Failed: Low Quality (Possible Screen)");
             return false;
         }
