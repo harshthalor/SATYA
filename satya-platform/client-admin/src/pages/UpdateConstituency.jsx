@@ -6,10 +6,6 @@ import {
   ScanFace, 
   ShieldCheck, 
   User, 
-<<<<<<< HEAD
-=======
-  Activity,
->>>>>>> aeb110139ab39c6025245c37203d6ce525049c93
   Loader2, 
   ChevronRight,
   Hash,
@@ -55,13 +51,8 @@ const UpdateConstituency = () => {
   // --- HANDLERS ---
   const startCamera = () => {
     setCameraActive(true);
-<<<<<<< HEAD
-    setIsProcessing(false);
-    addLog("Camera Module Activated. Waiting for face...", "loading");
-=======
     setIsProcessing(false); 
     addLog("Camera module activated.", "info");
->>>>>>> aeb110139ab39c6025245c37203d6ce525049c93
   };
 
   const handleFaceDetected = async (imgSrc) => {
@@ -70,15 +61,10 @@ const UpdateConstituency = () => {
     addLog("Biometric Data Acquired. Verifying...", "loading");
     
     try {
-<<<<<<< HEAD
-      // ✅ REAL API CALL RESTORED
-      const response = await fetch('http://localhost:8080/api/v1/admin/search-voter-by-face', {
-=======
       addLog("Querying Distributed Ledger...", "process");
       
       // ✅ UPDATED URL
       const response = await fetch(`${API_BASE_URL}/api/v1/admin/search-voter-by-face`, {
->>>>>>> aeb110139ab39c6025245c37203d6ce525049c93
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ base64Image: imgSrc })
@@ -99,13 +85,8 @@ const UpdateConstituency = () => {
     } catch (error) {
       addLog(`Lookup Failed: ${error.message}`, "error");
       setIsProcessing(false); 
-<<<<<<< HEAD
-      // Optional: Restart camera automatically on error
-      // setCameraActive(true); 
-=======
     } finally {
         if(activeStep === 1) setIsProcessing(false);
->>>>>>> aeb110139ab39c6025245c37203d6ce525049c93
     }
   };
 
@@ -151,37 +132,6 @@ const UpdateConstituency = () => {
     setFormData({ ...formData, voterId: '' });
     addLog("System reset. Ready for next applicant.", "neutral");
   };
-
-<<<<<<< HEAD
-  // Helper to get current log style
-  const currentLog = logs[0];
-  const getLogStyle = (type) => {
-     switch(type) {
-         case 'error': return { color: 'text-red-600', icon: <AlertCircle size={20} className="text-red-500" />, bar: 'bg-red-500' };
-         case 'success': return { color: 'text-emerald-700', icon: <CheckCircle size={20} className="text-emerald-500" />, bar: 'bg-emerald-500' };
-         case 'loading': return { color: 'text-sky-700', icon: <Loader2 size={20} className="text-sky-500 animate-spin" />, bar: 'bg-sky-500' };
-         default: return { 
-             color: 'text-slate-700', 
-             icon: <div className="w-5 h-5 rounded-full border-2 border-slate-300 border-t-slate-500 animate-spin" />, 
-             bar: 'bg-slate-300' 
-         };
-     }
-  };
-  const logStyle = getLogStyle(currentLog.type);
-
-  return (
-    <div className="flex h-screen w-full bg-slate-50 overflow-hidden font-sans">
-        
-        {/* --- LEFT SIDE --- */}
-        <div className="w-[55%] flex flex-col justify-start h-full px-12 pt-8 pb-6 relative border-r border-slate-200 bg-white overflow-y-auto">
-             
-             <div className="absolute top-0 left-0 w-64 h-64 bg-sky-200/40 rounded-br-full -z-10"></div>
-             
-             <div className="w-full h-full max-w-xl mx-auto flex flex-col">
-                
-                {/* 1. MAIN CONTENT */}
-                <div className="mb-4"> 
-=======
   // ... (REST OF THE JSX REMAINS EXACTLY THE SAME - SKIPPING FOR BREVITY) ...
   // Paste the return (...) block from your original code here
   return (
@@ -194,7 +144,6 @@ const UpdateConstituency = () => {
                 <div className="flex-1 flex flex-col justify-center">
                     
                     {/* SCENE 1: INSTRUCTIONS */}
->>>>>>> aeb110139ab39c6025245c37203d6ce525049c93
                     {activeStep === 1 && (
                         <div className="space-y-6 animate-in fade-in duration-500">
                             <div className="inline-flex items-center gap-2 px-3 py-1 bg-sky-50 text-sky-600 rounded-full text-xs font-bold uppercase tracking-wider border border-sky-100">
