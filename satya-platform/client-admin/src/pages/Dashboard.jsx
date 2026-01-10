@@ -135,7 +135,7 @@ const Dashboard = () => {
                     Access the complete technical documentation, architecture diagrams, and security protocols of SATYA.
                 </p>
                 <div className="mt-6 flex items-center gap-2 text-xs font-bold text-slate-600 uppercase tracking-widest group-hover:underline">
-                    <a href="#git link" className="flex items-center gap-1">
+                    <a href="https://harshthalor.github.io/SATYA/ABOUT/" className="flex items-center gap-1">
                         View <ArrowRight size={12} />
                     </a>
                 </div>
