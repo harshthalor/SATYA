@@ -6,14 +6,13 @@ import {
   ScanFace, 
   ShieldCheck, 
   User, 
-  Activity,
   Loader2, 
   ChevronRight,
   Hash,
   Camera,
   Ghost,
   AlertCircle,
-  Activity
+  Activity as ActivityIcon // ✅ Correctly aliased
 } from 'lucide-react';
 
 // ✅ Your custom camera component
@@ -64,7 +63,6 @@ const UpdateConstituency = () => {
     try {
       addLog("Querying Distributed Ledger...", "process");
       
-      // ✅ UPDATED URL
       const response = await fetch(`${API_BASE_URL}/api/v1/admin/search-voter-by-face`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -74,7 +72,6 @@ const UpdateConstituency = () => {
       const data = await response.json();
 
       if (response.ok && data.voterId) {
-        // ✅ Sets Voter ID from API Response
         setFormData(prev => ({ ...prev, voterId: data.voterId }));
         addLog(`Identity Verified: ${data.voterId}`, "success");
         setIsProcessing(false);
@@ -96,7 +93,6 @@ const UpdateConstituency = () => {
     addLog("Initiating Smart Contract Transaction...", "loading");
     
     try {
-      // ✅ UPDATED URL
       const response = await fetch(`${API_BASE_URL}/api/v1/admin/update-location`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -134,12 +130,50 @@ const UpdateConstituency = () => {
     addLog("System reset. Ready for next applicant.", "neutral");
   };
 
-  // ... (REST OF THE JSX REMAINS EXACTLY THE SAME - SKIPPING FOR BREVITY) ...
-  // Paste the return (...) block from your original code here
+  // ✅ FIX: Define currentLog and calculate styles dynamically
+  const currentLog = logs[0] || { msg: "System Ready", type: "neutral", time: "--:--" };
+
+  const getLogStyle = (type) => {
+    switch (type) {
+      case 'success':
+        return { 
+            color: 'text-emerald-600', 
+            icon: <CheckCircle className="text-emerald-500 animate-in zoom-in" size={20} />, 
+            bar: 'bg-emerald-500' 
+        };
+      case 'error':
+        return { 
+            color: 'text-rose-600', 
+            icon: <AlertCircle className="text-rose-500 animate-pulse" size={20} />, 
+            bar: 'bg-rose-500' 
+        };
+      case 'loading':
+      case 'process':
+        return { 
+            color: 'text-sky-600', 
+            icon: <Loader2 className="text-sky-500 animate-spin" size={20} />, 
+            bar: 'bg-sky-500' 
+        };
+      case 'info':
+        return { 
+            color: 'text-slate-600', 
+            icon: <ActivityIcon className="text-slate-500" size={20} />, 
+            bar: 'bg-slate-500' 
+        };
+      default:
+        return { 
+            color: 'text-slate-400', 
+            icon: <Ghost className="text-slate-300" size={20} />, 
+            bar: 'bg-slate-300' 
+        };
+    }
+  };
+
+  const logStyle = getLogStyle(currentLog.type);
+
+  // --- JSX ---
   return (
     <div className="flex h-screen w-full bg-slate-50 overflow-hidden font-sans">
-      {/* ... KEEP YOUR ORIGINAL JSX HERE ... */}
-      {/* Ensure you copy the JSX from your original file provided in the prompt */}
        <div className="w-[55%] flex flex-col justify-center p-12 relative border-r border-slate-200 bg-white">
              <div className="absolute top-0 left-0 w-64 h-64 bg-indigo-50/50 rounded-br-full -z-10"></div>
              <div className="w-full max-w-xl mx-auto flex flex-col h-[90%]">
@@ -233,14 +267,14 @@ const UpdateConstituency = () => {
                     )}
                 </div>
 
-                {/* 2. LOG SECTION */}
+                {/* 2. LOG SECTION (Fixed Variables) */}
                 <div className="mt-40 w-full max-w-xl mx-auto">
                     <div className="flex items-center justify-between mb-2 px-1">
                         <div className="flex items-center gap-2">
                             <Ghost size={14} className="text-slate-400" />
                             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest"> LOG </span>
                         </div>
-                        <span className="text-[10px] font-mono text-slate-300 font-bold">MR. BEAN</span>
+                        <span className="text-[10px] font-mono text-slate-300 font-bold">ADMIN CONSOLE</span>
                     </div>
                     
                     <div className="relative w-full rounded-xl bg-white border border-slate-200 shadow-sm p-4 flex items-center gap-4 overflow-hidden">
