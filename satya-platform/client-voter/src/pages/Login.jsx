@@ -15,6 +15,9 @@ import {
 // Import Custom Camera
 import FaceLivenessCam from '../components/FaceLivenessCam'; 
 
+// --- 🌐 API CONFIGURATION ---
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+
 const Login = () => {
   const navigate = useNavigate();
   
@@ -45,8 +48,8 @@ const Login = () => {
     setStatus('verifying');
 
     try {
-      // API Call
-      const res = await fetch('/api/v1/auth/scan', { 
+      // ✅ UPDATED URL: Using Absolute Path via API_BASE_URL
+      const res = await fetch(`${API_BASE_URL}/api/v1/auth/scan`, { 
         method: 'POST', 
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ imageBase64: imageSrc })
@@ -75,6 +78,7 @@ const Login = () => {
     }
   };
 
+  // ... (REST OF THE JSX REMAINS EXACTLY THE SAME) ...
   return (
     <div className="flex items-center justify-center min-h-screen bg-slate-50 text-slate-900 p-8 font-sans overflow-hidden">
       
@@ -104,31 +108,24 @@ const Login = () => {
       </div>
 
       {/* --- MAIN CONTAINER --- */}
-      {/* 1. 'items-center': Forces perfect vertical centering for all 3 columns 
-          2. 'gap-8': Reduced gap slightly to keep elements tighter 
-      */}
     <div className="relative z-10 w-full max-w-7xl bg-white border border-slate-200 rounded-[3rem] p-10 lg:p-14 shadow-2xl shadow-slate-200/50 grid grid-cols-1 lg:grid-cols-3 gap-8 items-center min-h-[600px]">
         
         {/* --- LEFT COLUMN: BRANDING --- */}
-        {/* Removed margins. Grid 'items-center' handles alignment now. */}
         <div className="text-center lg:text-left space-y-6 lg:pl-2">
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 border border-blue-100 text-blue-700 text-xs font-bold rounded-full uppercase tracking-widest shadow-sm">
                 <ShieldCheck size={14} /> SATYA VOTER
             </div>
             
-            {/* INCREASED TEXT SIZE */}
             <h1 className="text-5xl lg:text-7xl font-black text-slate-900 tracking-tight leading-tight">
                 Voter<br/><span className="text-blue-600">Login</span>
             </h1>
             
-            {/* INCREASED BODY TEXT SIZE */}
             <p className="text-slate-500 text-xl font-medium leading-relaxed max-w-md mx-auto lg:mx-0">
                 Secure biometric authentication gate. Verify identity to access the blockchain ballot.
             </p>
         </div>
 
         {/* --- CENTER COLUMN (CAMERA) --- */}
-        {/* Removed margins. Grid automatically centers this column vertically. */}
         <div className="flex justify-center relative z-20">
             
             {/* Camera Box (square) */}
@@ -223,7 +220,6 @@ const Login = () => {
         </div>
 
         {/* --- RIGHT COLUMN: INSTRUCTIONS --- */}
-        {/* Removed margins. Grid 'items-center' handles alignment now. */}
         <div className="flex justify-center lg:justify-end">
             <div className="bg-slate-50 rounded-[2.5rem] p-10 border border-slate-100 w-full max-w-md">
                 

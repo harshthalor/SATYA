@@ -16,7 +16,11 @@ import {
 // IMPORT YOUR CAMERA COMPONENT
 import FaceLivenessCam from '../components/FaceLivenessCam'; 
 
+<<<<<<< HEAD
 // --- 🌐 API CONFIGURATION (From your reference code) ---
+=======
+// --- 🌐 API CONFIGURATION ---
+>>>>>>> aeb110139ab39c6025245c37203d6ce525049c93
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
 
 const VoterOnboarding = () => {
@@ -70,7 +74,11 @@ const VoterOnboarding = () => {
         base64Image: imgSrc 
       };
 
+<<<<<<< HEAD
       // ✅ FIX: Use the configured API URL
+=======
+      // ✅ UPDATED URL
+>>>>>>> aeb110139ab39c6025245c37203d6ce525049c93
       const response = await fetch(`${API_BASE_URL}/api/v1/admin/register-voter`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -81,7 +89,11 @@ const VoterOnboarding = () => {
 
       if (response.ok) {
         setLogState({ 
+<<<<<<< HEAD
           message: `Voter Registered! Hash: ${String(data.voterId).substring(0, 12)}...`, 
+=======
+          message: `Voter Registered Successfully! ID: ${String(data.voterId).substring(0, 12)}...`, 
+>>>>>>> aeb110139ab39c6025245c37203d6ce525049c93
           type: "success" 
         });
       } else {
@@ -117,6 +129,7 @@ const VoterOnboarding = () => {
     setLogState({ message: "Reset Complete. Ready for next applicant.", type: "neutral" });
   };
 
+  // ... (REST OF THE JSX REMAINS EXACTLY THE SAME) ...
   return (
     <div className="w-full relative pb-12">
       

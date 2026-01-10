@@ -6,6 +6,10 @@ import {
   ScanFace, 
   ShieldCheck, 
   User, 
+<<<<<<< HEAD
+=======
+  Activity,
+>>>>>>> aeb110139ab39c6025245c37203d6ce525049c93
   Loader2, 
   ChevronRight,
   Hash,
@@ -17,6 +21,9 @@ import {
 
 // ✅ Your custom camera component
 import FaceLivenessCam from '../components/FaceLivenessCam'; 
+
+// --- 🌐 API CONFIGURATION ---
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
 
 const UpdateConstituency = () => {
   // --- STATE ---
@@ -48,8 +55,13 @@ const UpdateConstituency = () => {
   // --- HANDLERS ---
   const startCamera = () => {
     setCameraActive(true);
+<<<<<<< HEAD
     setIsProcessing(false);
     addLog("Camera Module Activated. Waiting for face...", "loading");
+=======
+    setIsProcessing(false); 
+    addLog("Camera module activated.", "info");
+>>>>>>> aeb110139ab39c6025245c37203d6ce525049c93
   };
 
   const handleFaceDetected = async (imgSrc) => {
@@ -58,8 +70,15 @@ const UpdateConstituency = () => {
     addLog("Biometric Data Acquired. Verifying...", "loading");
     
     try {
+<<<<<<< HEAD
       // ✅ REAL API CALL RESTORED
       const response = await fetch('http://localhost:8080/api/v1/admin/search-voter-by-face', {
+=======
+      addLog("Querying Distributed Ledger...", "process");
+      
+      // ✅ UPDATED URL
+      const response = await fetch(`${API_BASE_URL}/api/v1/admin/search-voter-by-face`, {
+>>>>>>> aeb110139ab39c6025245c37203d6ce525049c93
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ base64Image: imgSrc })
@@ -80,8 +99,13 @@ const UpdateConstituency = () => {
     } catch (error) {
       addLog(`Lookup Failed: ${error.message}`, "error");
       setIsProcessing(false); 
+<<<<<<< HEAD
       // Optional: Restart camera automatically on error
       // setCameraActive(true); 
+=======
+    } finally {
+        if(activeStep === 1) setIsProcessing(false);
+>>>>>>> aeb110139ab39c6025245c37203d6ce525049c93
     }
   };
 
@@ -90,7 +114,8 @@ const UpdateConstituency = () => {
     addLog("Initiating Smart Contract Transaction...", "loading");
     
     try {
-      const response = await fetch('http://localhost:8080/api/v1/admin/update-location', {
+      // ✅ UPDATED URL
+      const response = await fetch(`${API_BASE_URL}/api/v1/admin/update-location`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
@@ -127,6 +152,7 @@ const UpdateConstituency = () => {
     addLog("System reset. Ready for next applicant.", "neutral");
   };
 
+<<<<<<< HEAD
   // Helper to get current log style
   const currentLog = logs[0];
   const getLogStyle = (type) => {
@@ -155,6 +181,20 @@ const UpdateConstituency = () => {
                 
                 {/* 1. MAIN CONTENT */}
                 <div className="mb-4"> 
+=======
+  // ... (REST OF THE JSX REMAINS EXACTLY THE SAME - SKIPPING FOR BREVITY) ...
+  // Paste the return (...) block from your original code here
+  return (
+    <div className="flex h-screen w-full bg-slate-50 overflow-hidden font-sans">
+      {/* ... KEEP YOUR ORIGINAL JSX HERE ... */}
+      {/* Ensure you copy the JSX from your original file provided in the prompt */}
+       <div className="w-[55%] flex flex-col justify-center p-12 relative border-r border-slate-200 bg-white">
+             <div className="absolute top-0 left-0 w-64 h-64 bg-indigo-50/50 rounded-br-full -z-10"></div>
+             <div className="w-full max-w-xl mx-auto flex flex-col h-[90%]">
+                <div className="flex-1 flex flex-col justify-center">
+                    
+                    {/* SCENE 1: INSTRUCTIONS */}
+>>>>>>> aeb110139ab39c6025245c37203d6ce525049c93
                     {activeStep === 1 && (
                         <div className="space-y-6 animate-in fade-in duration-500">
                             <div className="inline-flex items-center gap-2 px-3 py-1 bg-sky-50 text-sky-600 rounded-full text-xs font-bold uppercase tracking-wider border border-sky-100">
