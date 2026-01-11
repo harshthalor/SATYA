@@ -1,5 +1,8 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import heroImg from '../assets/hero.jpg';
+import registerImg from '../assets/register.jpg';
+import updateImg from '../assets/update.jpg';
 import {
   Globe,
   ArrowRight,
@@ -9,7 +12,9 @@ import {
   Server,
   CheckCircle2,
   Lock,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Boxes,
+  Earth
 } from 'lucide-react';
 
 const Dashboard = () => {
@@ -26,7 +31,7 @@ const Dashboard = () => {
         {/* LEFT CONTENT */}
         <div className="space-y-6">
           <div className="inline-flex items-center gap-2 px-3 py-1 bg-sky-50 border border-sky-200 text-sky-700 text-xs font-bold rounded-full uppercase tracking-widest shadow-sm">
-            <Globe size={14} /> National Voter Infrastructure
+            <Earth size={14} /> National Voter Infrastructure
           </div>
 
           <h1 className="text-4xl md:text-5xl font-extrabold leading-tight text-slate-900">
@@ -59,18 +64,20 @@ const Dashboard = () => {
 
         {/* RIGHT – HERO IMAGE SPACE */}
         <div className="flex justify-center md:justify-end">
-          {/* 👇 REPLACE THIS DIV WITH YOUR HERO IMAGE 👇 */}
-          <div className="w-full max-w-md aspect-[4/3] bg-white border-2 border-dashed border-sky-200 rounded-3xl flex flex-col items-center justify-center text-sky-300">
-            <ImageIcon size={48} className="mb-2 opacity-50" />
-            <span className="font-semibold text-sky-400">HERO IMAGE HERE</span>
-            <span className="text-xs text-sky-300">(Your Project Illustration)</span>
+          
+          <div className="w-full max-w-md rounded-3xl overflow-hidden shadow-2xl shadow-sky-900/10 border-4 border-white">
+            <img 
+              src={heroImg} 
+              alt="Voting System Hero" 
+              className="w-full h-full object-cover"
+            />
           </div>
-          {/* 👆 END PLACEHOLDER 👆 */}
+
         </div>
       </div>
 
       {/* ================= STATS SECTION ================= */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-20">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-20">
         
         <div className="bg-white p-6 rounded-2xl border border-sky-100 shadow-sm hover:border-sky-300 transition">
           <Server className="text-sky-600 mb-3 h-8 w-8" />
@@ -88,14 +95,22 @@ const Dashboard = () => {
           </p>
         </div>
 
-        <div className="bg-white p-6 rounded-2xl border border-sky-100 shadow-sm flex items-center justify-between hover:border-sky-300 transition">
+        <div className="bg-white p-6 rounded-2xl border border-sky-100 shadow-sm hover:border-sky-300 transition">
+          <Server className="text-sky-600 mb-3 h-8 w-8" />
+          <p className="text-xl font-bold text-slate-900">Apache Kafka</p>
+          <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+            Real-time Syncing
+          </p>
+        </div>
+
+        <div className="bg-white p-6 rounded-2xl border border-sky-100 shadow-sm hover:border-sky-300 transition">
           <div>
-            <p className="font-bold text-slate-900 text-lg">Blockchain Ledger</p>
-            <p className="text-xs text-slate-500 uppercase tracking-wider mt-1">
-              Consensus Verified
+            <Boxes className="text-sky-600 mb-3 h-8 w-8" />
+            <p className="text-xl font-bold text-slate-900">Blockchain Ledger</p>
+            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+              Immutable Records
             </p>
           </div>
-          <CheckCircle2 className="text-emerald-500 h-10 w-10" />
         </div>
 
       </div>
@@ -118,9 +133,13 @@ const Dashboard = () => {
             className="group bg-white p-8 rounded-3xl border border-sky-100 hover:border-sky-400 hover:shadow-xl hover:shadow-sky-200/40 transition duration-300"
           >
             {/* 👇 IMAGE PLACEHOLDER 👇 */}
-            <div className="w-full h-48 bg-sky-50 border-2 border-dashed border-sky-200 rounded-2xl mb-6 flex flex-col items-center justify-center text-sky-300 group-hover:bg-sky-100/50 transition">
-              <ImageIcon size={32} className="mb-2 opacity-50" />
-              <span className="text-xs font-bold text-sky-400">REGISTRATION IMAGE</span>
+            {/* ✅ REGISTER IMAGE ADDED */}
+            <div className="w-full h-48 rounded-2xl mb-6 overflow-hidden shadow-sm border border-slate-200 group-hover:shadow-md transition-all">
+               <img 
+                 src={registerImg} 
+                 alt="Registration Preview" 
+                 className="w-full h-full object-cover" 
+               />
             </div>
             {/* 👆 END PLACEHOLDER 👆 */}
 
@@ -139,7 +158,7 @@ const Dashboard = () => {
             </div>
 
             <span className="inline-flex items-center gap-2 font-bold text-sm text-sky-600 group-hover:translate-x-1 transition-transform">
-              Open Module <ArrowRight size={16} />
+              Tap to register <ArrowRight size={16} />
             </span>
           </Link>
 
@@ -149,9 +168,13 @@ const Dashboard = () => {
             className="group bg-white p-8 rounded-3xl border border-sky-100 hover:border-sky-400 hover:shadow-xl hover:shadow-sky-200/40 transition duration-300"
           >
              {/* 👇 IMAGE PLACEHOLDER 👇 */}
-             <div className="w-full h-48 bg-sky-50 border-2 border-dashed border-sky-200 rounded-2xl mb-6 flex flex-col items-center justify-center text-sky-300 group-hover:bg-sky-100/50 transition">
-              <ImageIcon size={32} className="mb-2 opacity-50" />
-              <span className="text-xs font-bold text-sky-400">UPDATE IMAGE</span>
+             {/* ✅ UPDATE IMAGE ADDED */}
+            <div className="w-full h-48 rounded-2xl mb-6 overflow-hidden shadow-sm border border-slate-200 group-hover:shadow-md transition-all">
+               <img 
+                 src={updateImg} 
+                 alt="Update Preview" 
+                 className="w-full h-full object-cover" 
+               />
             </div>
             {/* 👆 END PLACEHOLDER 👆 */}
 
@@ -170,7 +193,7 @@ const Dashboard = () => {
             </div>
 
             <span className="inline-flex items-center gap-2 font-bold text-sm text-sky-600 group-hover:translate-x-1 transition-transform">
-              Open Module <ArrowRight size={16} />
+              Tap to update <ArrowRight size={16} />
             </span>
           </Link>
 

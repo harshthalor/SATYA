@@ -12,7 +12,7 @@ import {
   Camera,
   Ghost,
   AlertCircle,
-  Activity as ActivityIcon // ✅ Correctly aliased
+  Activity as ActivityIcon 
 } from 'lucide-react';
 
 // ✅ Your custom camera component
@@ -173,11 +173,15 @@ const UpdateConstituency = () => {
 
   // --- JSX ---
   return (
-    <div className="flex h-screen w-full bg-slate-50 overflow-hidden font-sans">
-       <div className="w-[55%] flex flex-col justify-center p-12 relative border-r border-slate-200 bg-white">
+    // UPDATED: Added flex-col for mobile, lg:flex-row for desktop, and changed overflow handling
+    <div className="flex flex-col lg:flex-row min-h-screen w-full bg-slate-50 font-sans overflow-y-auto lg:overflow-hidden">
+       
+       {/* --- LEFT SIDE: FORM (Full width on mobile, 55% on desktop) --- */}
+       <div className="w-full lg:w-[55%] flex flex-col justify-center p-6 lg:p-12 relative border-b lg:border-b-0 lg:border-r border-slate-200 bg-white">
              <div className="absolute top-0 left-0 w-64 h-64 bg-indigo-50/50 rounded-br-full -z-10"></div>
-             <div className="w-full max-w-xl mx-auto flex flex-col h-[90%]">
-                <div className="flex-1 flex flex-col justify-center">
+             <div className="w-full max-w-xl mx-auto flex flex-col h-auto lg:h-[90%]">
+                {/* Adjusted margins for mobile */}
+                <div className="flex flex-col mt-10 mb-10 lg:mt-20 lg:mb-20">
                     
                     {/* SCENE 1: INSTRUCTIONS */}
                     {activeStep === 1 && (
@@ -186,11 +190,12 @@ const UpdateConstituency = () => {
                                 <ScanFace size={14} /> Biometric Authentication
                             </div>
                             <div>
-                                <h1 className="text-5xl font-extrabold text-slate-900 mb-4 leading-tight">
+                                {/* Adjusted text size for mobile */}
+                                <h1 className="uppercase text-3xl lg:text-4xl font-extrabold text-slate-900 mb-4 leading-tight tracking-wider">
                                     Voter Authentication
                                 </h1>
-                                <p className="text-slate-500 text-lg leading-relaxed">
-                                    Click "Start Authentication" to enable the biometric camera. Ensure the applicant is facing forward.
+                                <p className="text-slate-500 text-base lg:text-lg leading-relaxed tracking-wider uppercase">
+                                    Click "Start Camera" to enable the biometric scan. Ensure the applicant is facing forward.
                                 </p>
                             </div>
                             <div className="flex gap-4 pt-2">
@@ -212,25 +217,25 @@ const UpdateConstituency = () => {
 
                     {activeStep === 2 && (
                         <div className="bg-white rounded-2xl shadow-xl shadow-slate-200 border border-slate-100 overflow-hidden animate-in slide-in-from-right duration-500">
-                            <div className="px-8 py-5 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
-                                <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
+                            <div className="px-6 lg:px-8 py-5 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
+                                <h2 className="text-lg lg:text-xl font-bold text-slate-800 flex items-center gap-2">
                                     <MapPin className="text-sky-600" /> Update Constituency
                                 </h2>
-                                <div className="flex items-center gap-2 text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-100">
+                                <div className="flex items-center gap-2 text-[10px] lg:text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-100">
                                     <CheckCircle size={12} /> VERIFIED
                                 </div>
                             </div>
-                            <div className="p-6 space-y-6">
+                            <div className="p-4 lg:p-6 space-y-6">
                                 <div className="bg-sky-50 border border-sky-100 rounded-xl p-4 flex items-center gap-4">
                                     <div className="w-10 h-10 bg-sky-100 rounded-lg flex items-center justify-center text-sky-600 shrink-0">
                                         <Hash size={20} />
                                     </div>
                                     <div>
                                         <p className="text-xs font-bold text-sky-400 uppercase tracking-wider">Voter ID</p>
-                                        <p className="text-lg font-mono font-bold text-sky-900">{formData.voterId}</p>
+                                        <p className="text-base lg:text-lg font-mono font-bold text-sky-900 break-all">{formData.voterId}</p>
                                     </div>
                                 </div>
-                                <div className="grid grid-cols-2 gap-4">
+                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                                     <div>
                                         <label className="text-xs font-bold text-slate-500 uppercase block mb-1">New State</label>
                                         <select 
@@ -258,7 +263,7 @@ const UpdateConstituency = () => {
                              <div className="w-24 h-24 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-6 text-emerald-600 shadow-lg shadow-emerald-100">
                                  <CheckCircle size={48} />
                              </div>
-                             <h2 className="text-3xl font-bold text-slate-800">Update Complete</h2>
+                             <h2 className="text-2xl lg:text-3xl font-bold text-slate-800">Update Complete</h2>
                              <p className="text-slate-500 mt-2 mb-8">The blockchain ledger has been updated.</p>
                              <button onClick={resetSystem} className="bg-slate-900 text-white px-8 py-3 rounded-full font-bold hover:bg-slate-800 transition-colors flex items-center gap-2 mx-auto shadow-lg shadow-slate-300">
                                  Process Next Applicant <ChevronRight size={16} />
@@ -267,14 +272,14 @@ const UpdateConstituency = () => {
                     )}
                 </div>
 
-                {/* 2. LOG SECTION (Fixed Variables) */}
-                <div className="mt-40 w-full max-w-xl mx-auto">
+                {/* 2. LOG SECTION */}
+                <div className="mt-4 lg:mt-8 w-full max-w-xl mx-auto mb-8 lg:mb-0">
                     <div className="flex items-center justify-between mb-2 px-1">
                         <div className="flex items-center gap-2">
                             <Ghost size={14} className="text-slate-400" />
                             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest"> LOG </span>
                         </div>
-                        <span className="text-[10px] font-mono text-slate-300 font-bold">ADMIN CONSOLE</span>
+                        <span className="text-[10px] font-mono text-slate-300 font-bold">MR. BEAN</span>
                     </div>
                     
                     <div className="relative w-full rounded-xl bg-white border border-slate-200 shadow-sm p-4 flex items-center gap-4 overflow-hidden">
@@ -283,7 +288,7 @@ const UpdateConstituency = () => {
                             {logStyle.icon}
                         </div>
                         <div className="flex-1">
-                            <p className={`text-base font-bold leading-tight ${logStyle.color}`}>
+                            <p className={`text-sm lg:text-base font-bold leading-tight ${logStyle.color}`}>
                                 {currentLog.msg}
                             </p>
                             <p className="text-[11px] font-mono text-slate-400 mt-1 font-medium">
@@ -296,11 +301,11 @@ const UpdateConstituency = () => {
              </div>
         </div>
 
-        {/* --- RIGHT SIDE: CAMERA (45%) --- */}
-        <div className="w-[45%] bg-slate-50 relative flex flex-col items-center justify-center p-8 overflow-hidden">
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-sky-200/40 rounded-full blur-3xl pointer-events-none"></div>
+        {/* --- RIGHT SIDE: CAMERA (Full width on mobile, 45% on desktop) --- */}
+        <div className="w-full lg:w-[45%] bg-slate-50 relative flex flex-col items-center justify-center p-4 lg:p-8 overflow-hidden min-h-[500px] lg:min-h-auto">
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] lg:w-[500px] h-[300px] lg:h-[500px] bg-sky-200/40 rounded-full blur-3xl pointer-events-none"></div>
 
-            <div className="relative w-full max-w-[420px] aspect-[3/4] rounded-[2.5rem] overflow-hidden bg-slate-900 shadow-2xl border border-slate-800 ring-4 ring-white/5 grid place-items-center shadow-sky-900/10">
+            <div className="relative w-full max-w-[340px] lg:max-w-[420px] aspect-[3/4] rounded-[2.5rem] overflow-hidden bg-slate-900 shadow-2xl border border-slate-800 ring-4 ring-white/5 grid place-items-center shadow-sky-900/10">
                 <style>{`
                     .camera-wrapper {
                         display: flex;

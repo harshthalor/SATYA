@@ -80,7 +80,8 @@ const Login = () => {
 
   // ... (REST OF THE JSX REMAINS EXACTLY THE SAME) ...
   return (
-    <div className="flex items-center justify-center min-h-screen bg-slate-50 text-slate-900 p-8 font-sans overflow-hidden">
+    // ✅ CHANGED: bg-slate-50 -> bg-green-50 to match the "pic" background
+    <div className="flex items-center justify-center min-h-screen bg-green-50 text-slate-900 p-8 font-sans overflow-hidden">
       
             {/* CSS to Force Video Fit and center the face in the circle */}
             <style>{`
@@ -103,21 +104,23 @@ const Login = () => {
 
       {/* Background Decor */}
       <div className="fixed inset-0 pointer-events-none">
-        <div className="absolute top-[-10%] left-[-5%] w-[600px] h-[600px] bg-blue-100 rounded-full blur-[100px] opacity-50"></div>
+        {/* ✅ CHANGED: Switched to sky-200 for a clearer blue */}
+        <div className="absolute top-[-10%] left-[-5%] w-[600px] h-[600px] bg-sky-200 rounded-full blur-[100px] opacity-40"></div>
         <div className="absolute bottom-[-10%] right-[-5%] w-[600px] h-[600px] bg-emerald-100 rounded-full blur-[100px] opacity-50"></div>
       </div>
 
       {/* --- MAIN CONTAINER --- */}
-    <div className="relative z-10 w-full max-w-7xl bg-white border border-slate-200 rounded-[3rem] p-10 lg:p-14 shadow-2xl shadow-slate-200/50 grid grid-cols-1 lg:grid-cols-3 gap-8 items-center min-h-[600px]">
+    <div className="relative z-10 w-full max-w-7xl bg-white border border-slate-200 rounded-[3rem] p-10 lg:p-14 shadow-2xl shadow-green-900/10 grid grid-cols-1 lg:grid-cols-3 gap-8 items-center min-h-[600px]">
         
         {/* --- LEFT COLUMN: BRANDING --- */}
         <div className="text-center lg:text-left space-y-6 lg:pl-2">
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 border border-blue-100 text-blue-700 text-xs font-bold rounded-full uppercase tracking-widest shadow-sm">
+            {/* ✅ CHANGED: Blue-50 -> Sky-50/Sky-600 */}
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-sky-50 border border-sky-100 text-sky-700 text-xs font-bold rounded-full uppercase tracking-widest shadow-sm">
                 <ShieldCheck size={14} /> SATYA VOTER
             </div>
             
             <h1 className="text-5xl lg:text-7xl font-black text-slate-900 tracking-tight leading-tight">
-                Voter<br/><span className="text-blue-600">Login</span>
+                Voter<br/><span className="text-sky-600">Login</span>
             </h1>
             
             <p className="text-slate-500 text-xl font-medium leading-relaxed max-w-md mx-auto lg:mx-0">
@@ -161,8 +164,9 @@ const Login = () => {
                         {/* Verifying */}
                         {status === 'verifying' && (
                             <div className="absolute inset-0 bg-white/90 backdrop-blur-md flex flex-col items-center justify-center">
-                                <Loader2 size={56} className="text-blue-600 animate-spin mb-4" />
-                                <span className="text-blue-900 font-bold text-lg tracking-tight">Verifying...</span>
+                                {/* ✅ CHANGED: Blue-600 -> Sky-600 */}
+                                <Loader2 size={56} className="text-sky-600 animate-spin mb-4" />
+                                <span className="text-sky-900 font-bold text-lg tracking-tight">Verifying...</span>
                             </div>
                         )}
 
@@ -194,7 +198,8 @@ const Login = () => {
                             onClick={startCamera}
                             className="group relative flex flex-col items-center justify-center gap-4"
                         >
-                            <div className="w-24 h-24 rounded-full bg-blue-600 flex items-center justify-center shadow-[0_0_40px_rgba(37,99,235,0.4)] group-hover:scale-110 group-hover:bg-blue-500 transition-all duration-300 border-4 border-white/10">
+                            {/* ✅ CHANGED: Blue-600 -> Sky-600 */}
+                            <div className="w-24 h-24 rounded-full bg-sky-600 flex items-center justify-center shadow-[0_0_40px_rgba(14,165,233,0.4)] group-hover:scale-110 group-hover:bg-sky-500 transition-all duration-300 border-4 border-white/10">
                                 <Camera size={36} className="text-white" />
                             </div>
                             <span className="text-white font-bold text-xs tracking-[0.2em] uppercase opacity-80 group-hover:opacity-100 transition-opacity">
@@ -224,7 +229,8 @@ const Login = () => {
             <div className="bg-slate-50 rounded-[2.5rem] p-10 border border-slate-100 w-full max-w-md">
                 
                 <h3 className="font-bold text-black flex items-center gap-3 mb-8 text-xl">
-                    <Info size={24} className="text-blue-900"/> Instructions
+                    {/* ✅ CHANGED: Blue-900 -> Sky-900 */}
+                    <Info size={24} className="text-sky-900"/> Instructions
                 </h3>
 
                 <div className="space-y-8">

@@ -126,9 +126,9 @@ const VoterOnboarding = () => {
 
       {/* HEADER */}
       <div className="mb-8">
-        <h1 className="text-3xl font-extrabold text-slate-900">Voter Onboarding</h1>
-        <p className="text-slate-600 mt-2">
-          Register new citizens and their biometric data to the blockchain.
+        <h1 className="text-4xl font-extrabold text-slate-900 uppercase tracking-wider">Voter Onboarding</h1>
+        <p className="text-xl font-bold text-slate-500 uppercase tracking-wider mt-2">
+            Register new citizens and their biometric data to the blockchain.
         </p>
       </div>
 
@@ -176,7 +176,7 @@ const VoterOnboarding = () => {
                 {/* State & Zone */}
                 <div className="grid grid-cols-2 gap-4">
                    <div>
-                      <label className="text-xs font-bold text-slate-500 block mb-2">State / Region</label>
+                      <label className="text-xs font-bold text-slate-500 block mb-2 uppercase">State / Region</label>
                       <div className="relative">
                         <MapPin className="absolute left-3 top-3.5 text-slate-400 pointer-events-none" size={16} />
                         <select className="w-full pl-10 pr-4 py-3 bg-slate-50 rounded-xl border border-slate-200 font-semibold text-slate-700 appearance-none focus:ring-2 focus:ring-sky-200 outline-none cursor-pointer"
@@ -186,7 +186,7 @@ const VoterOnboarding = () => {
                       </div>
                    </div>
                    <div>
-                      <label className="text-xs font-bold text-slate-500 block mb-2">Zone Code</label>
+                      <label className="text-xs font-bold text-slate-500 block mb-2 uppercase">Zone Code</label>
                       <div className="w-full py-3 bg-slate-100 rounded-xl border border-slate-200 text-slate-500 font-mono text-center font-bold">
                         {formData.constituencyId}
                       </div>
@@ -199,7 +199,7 @@ const VoterOnboarding = () => {
                 <button 
                   onClick={handleRegister}
                   disabled={mode !== 'captured'}
-                  className={`w-full py-4 rounded-xl font-bold text-base flex items-center justify-center gap-2 transition-all duration-300 shadow-md ${
+                  className={`w-full py-4 rounded-xl font-bold text-base uppercase flex items-center justify-center gap-2 transition-all duration-300 shadow-md ${
                       mode === 'captured' 
                       ? 'bg-sky-600 text-white hover:bg-sky-700 hover:-translate-y-1 ' 
                       : 'bg-slate-100 text-slate-400 cursor-not-allowed'
