@@ -6,7 +6,7 @@ import {
   Vote, Activity, MapPin, RefreshCw, Trophy 
 } from 'lucide-react';
 
-const Dashboard = () => {
+const Result = () => {
   const [data, setData] = useState([]);
   const [totalVotes, setTotalVotes] = useState(0);
   const [constituency, setConstituency] = useState(1);
@@ -245,4 +245,4 @@ const Dashboard = () => {
   );
 };
 
-export default Dashboard;
+export default Result;

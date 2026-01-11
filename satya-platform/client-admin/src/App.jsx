@@ -13,6 +13,7 @@ import { Home, UserPlus, MapPin, Box } from 'lucide-react';
 import Dashboard from './pages/Dashboard';
 import VoterOnboarding from './pages/VoterOnboarding';
 import UpdateConstituency from './pages/UpdateConstituency';
+import Result from './pages/Result';
 
 // ---------------- NAVBAR ----------------
 
@@ -92,6 +93,7 @@ function App() {
             <Route path="/" element={<Dashboard />} />
             <Route path="/register" element={<VoterOnboarding />} />
             <Route path="/update" element={<UpdateConstituency />} />
+            <Route path="/results" element={<Result />} /> 
           </Routes>
         </main>
 
