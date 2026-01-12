@@ -5,7 +5,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, LabelList 
 } from 'recharts';
 import { 
-  Vote, Activity, MapPin, RefreshCw, Trophy, AlertCircle, ShieldCheck 
+  Vote, Activity, MapPin, RefreshCw, Trophy, AlertCircle, ShieldCheck, Info 
 } from 'lucide-react';
 
 const Result = () => {
@@ -14,6 +14,7 @@ const Result = () => {
   const [constituency, setConstituency] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [debugInfo, setDebugInfo] = useState(''); // For troubleshooting
   const [lastUpdated, setLastUpdated] = useState(null);
 
   // Helper to safely find the winner
@@ -23,24 +24,29 @@ const Result = () => {
 
   const fetchLiveStats = useCallback(async () => {
     setLoading(true);
-    setError(null); // Reset error state on new fetch attempt
+    setError(null);
+    
+    // 1. DETERMINE URL
+    // Priority: Vercel Env Var -> Hardcoded Fallback -> Localhost
+    // Note: 'NEXT_PUBLIC_API_URL' must be set in Vercel Dashboard for prod
+    const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+    const targetUrl = `${API_BASE}/api/v1/results/${constituency}`;
+    
+    setDebugInfo(`Attempting to connect to: ${targetUrl}`);
 
     try {
-      // API Call
-      const res = await fetch(`http://localhost:8080/api/v1/results/${constituency}`);
+      const res = await fetch(targetUrl);
       
       if (!res.ok) {
-        throw new Error(`Server Error: ${res.status}`);
+        throw new Error(`Server responded with Status ${res.status} (${res.statusText})`);
       }
       
       const realData = await res.json();
       
-      // Validation & Formatting
       if (Array.isArray(realData)) {
         const processedData = realData.map((item, index) => ({
           ...item,
-          votes: Number(item.votes), // Ensure votes are numbers
-          // Default palette if API doesn't send colors (Matches SATYA theme: Saffron, Blue, Green, Grey)
+          votes: Number(item.votes),
           fill: item.fill || ['#ea580c', '#0284c7', '#16a34a', '#64748b'][index % 4]
         }));
 
@@ -53,8 +59,19 @@ const Result = () => {
 
     } catch (err) {
       console.error("Fetch error:", err);
-      setError(err.message);
-      setData([]); // Ensure no old data is shown
+      
+      // 2. INTELLIGENT ERROR DIAGNOSIS
+      let friendlyError = err.message;
+      if (err.message.includes("Failed to fetch")) {
+        // This usually means CORS or Mixed Content
+        if (API_BASE.includes("http://") && window.location.protocol === "https:") {
+          friendlyError = "Mixed Content Error: You are on HTTPS (Vercel) but trying to fetch HTTP (Insecure Backend). Your backend MUST be HTTPS.";
+        } else {
+          friendlyError = "Network Error: Could not reach backend. Check CORS settings or if backend is offline.";
+        }
+      }
+      setError(friendlyError);
+      setData([]); 
     } finally {
       setLoading(false);
     }
@@ -67,15 +84,13 @@ const Result = () => {
   }, [fetchLiveStats]);
 
   return (
-    // THEME: Matches SATYA Screenshot (Cream Background)
     <div className="min-h-screen bg-[#fdfbf7] font-sans text-slate-900 pb-12 animate-in fade-in duration-700">
       
-      {/* --- HEADER (Light Blue) --- */}
+      {/* --- HEADER --- */}
       <header className="bg-[#e0f2fe] border-b border-blue-100 px-4 md:px-8 py-6 mb-8 shadow-sm sticky top-0 z-30">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
             <div>
                 <div className="flex items-center gap-3">
-                   {/* Logo / Brand Icon placeholder */}
                    <div className="bg-sky-600 text-white p-2 rounded-lg">
                       <Vote size={24} />
                    </div>
@@ -87,7 +102,7 @@ const Result = () => {
                 <div className="flex items-center gap-2 mt-2 ml-1">
                     {error ? (
                          <span className="flex items-center gap-2 text-xs font-bold text-red-600 bg-red-50 px-2 py-1 rounded border border-red-100">
-                            <AlertCircle size={12} /> System Offline
+                            <AlertCircle size={12} /> Connection Failed
                          </span>
                     ) : (
                         <>
@@ -105,7 +120,6 @@ const Result = () => {
 
             {/* Controls */}
             <div className="flex items-center gap-4">
-                {/* Constituency Switcher - SATYA Button Style */}
                 <div className="bg-white p-1 rounded-xl border border-slate-200 flex shadow-sm">
                     <button 
                         onClick={() => setConstituency(1)}
@@ -129,7 +143,6 @@ const Result = () => {
                     </button>
                 </div>
 
-                {/* Refresh Button */}
                 <button 
                     onClick={fetchLiveStats}
                     disabled={loading}
@@ -141,21 +154,34 @@ const Result = () => {
         </div>
       </header>
 
-      {/* --- ERROR STATE --- */}
+      {/* --- ERROR & DEBUG DISPLAY --- */}
       {error && (
         <div className="max-w-7xl mx-auto px-4 md:px-8 mb-8">
-            <div className="bg-red-50 border border-red-200 rounded-2xl p-6 flex items-center gap-4 text-red-800 shadow-sm">
-                <AlertCircle className="w-8 h-8 flex-shrink-0" />
-                <div>
-                    <h3 className="font-bold text-lg">Connection Failed</h3>
-                    <p className="text-sm opacity-80">{error}. Please ensure the backend server is running on port 8080.</p>
+            <div className="bg-red-50 border border-red-200 rounded-2xl p-6 flex flex-col gap-2 text-red-800 shadow-sm">
+                <div className="flex items-center gap-3">
+                    <AlertCircle className="w-6 h-6 flex-shrink-0" />
+                    <h3 className="font-bold text-lg">Connection Error</h3>
                 </div>
-                <button 
-                    onClick={fetchLiveStats}
-                    className="ml-auto px-4 py-2 bg-white border border-red-200 rounded-lg text-sm font-bold shadow-sm hover:bg-red-50 transition-colors"
-                >
-                    Retry
-                </button>
+                <p className="text-sm ml-9 font-medium">{error}</p>
+                <div className="bg-white/50 p-3 rounded mt-2 ml-9 text-xs font-mono text-red-700 break-all border border-red-100">
+                    <span className="font-bold">Debug Info:</span> {debugInfo}
+                </div>
+                <div className="ml-9 mt-2 flex gap-3">
+                    <button 
+                        onClick={fetchLiveStats}
+                        className="px-4 py-2 bg-white border border-red-200 rounded-lg text-xs font-bold shadow-sm hover:bg-red-100 transition-colors"
+                    >
+                        Retry Connection
+                    </button>
+                    <a 
+                       href={debugInfo.replace('Attempting to connect to: ', '')} 
+                       target="_blank"
+                       rel="noreferrer"
+                       className="px-4 py-2 bg-red-100 border border-red-200 rounded-lg text-xs font-bold hover:bg-red-200 transition-colors flex items-center gap-2"
+                    >
+                        Open API in Browser <Info size={12} />
+                    </a>
+                </div>
             </div>
         </div>
       )}
@@ -164,10 +190,9 @@ const Result = () => {
       {!error && (
       <div className="max-w-7xl mx-auto px-4 md:px-8 space-y-8">
         
-        {/* 1. STATS ROW */}
+        {/* STATS ROW */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             
-            {/* Total Votes Card - White with Soft Shadow */}
             <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-lg shadow-slate-200/50 flex items-center justify-between group hover:border-sky-200 transition-all duration-300">
                 <div>
                     <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Total Votes Cast</p>
@@ -180,7 +205,6 @@ const Result = () => {
                 </div>
             </div>
 
-            {/* Leading Candidate Card */}
             <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-lg shadow-slate-200/50 flex items-center justify-between group hover:border-green-200 transition-all duration-300 relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-green-50 rounded-bl-full -z-0 transition-transform group-hover:scale-125 duration-500"></div>
 
@@ -204,7 +228,7 @@ const Result = () => {
             </div>
         </div>
 
-        {/* 2. MAIN CHART - White Background */}
+        {/* CHART ROW */}
         <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-lg shadow-slate-200/50">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 border-b border-slate-100 pb-6 gap-4">
                 <div className="flex items-center gap-4">
@@ -225,9 +249,7 @@ const Result = () => {
             <div className="w-full h-[450px]">
                 <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={data} margin={{ top: 20, right: 30, left: 0, bottom: 20 }}>
-                        {/* Light Mode Grid */}
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                        
                         <defs>
                             {data.map((entry, index) => (
                                 <linearGradient key={`grad-${index}`} id={`gradient-${index}`} x1="0" y1="0" x2="0" y2="1">
@@ -236,23 +258,19 @@ const Result = () => {
                                 </linearGradient>
                             ))}
                         </defs>
-
                         <XAxis 
                             dataKey="name" 
                             axisLine={false} 
                             tickLine={false} 
-                            tick={{fill: '#475569', fontSize: 14, fontWeight: 700}} // Slate-600
+                            tick={{fill: '#475569', fontSize: 14, fontWeight: 700}} 
                             dy={20}
                             interval={0} 
                         />
-                        
                         <YAxis 
                             axisLine={false} 
                             tickLine={false} 
-                            tick={{fill: '#94a3b8', fontSize: 12, fontWeight: 600}} // Slate-400
+                            tick={{fill: '#94a3b8', fontSize: 12, fontWeight: 600}} 
                         />
-                        
-                        {/* Light Mode Tooltip */}
                         <Tooltip 
                             cursor={{ fill: '#f1f5f9', opacity: 0.5 }}
                             contentStyle={{ 
@@ -263,9 +281,7 @@ const Result = () => {
                                 color: '#1e293b',
                                 fontWeight: 'bold'
                             }}
-                            itemStyle={{ color: '#334155' }}
                         />
-                        
                         <Bar 
                             dataKey="votes" 
                             radius={[8, 8, 8, 8]} 
@@ -273,12 +289,7 @@ const Result = () => {
                             animationDuration={1500}
                         >
                             {data.map((entry, index) => (
-                                <Cell 
-                                    key={`cell-${index}`} 
-                                    fill={`url(#gradient-${index})`} 
-                                    stroke={entry.fill}
-                                    strokeWidth={0} // Clean look without border
-                                />
+                                <Cell key={`cell-${index}`} fill={`url(#gradient-${index})`} stroke={entry.fill} strokeWidth={0} />
                             ))}
                             <LabelList dataKey="votes" position="top" fill="#64748b" fontSize={12} fontWeight="bold" offset={10} />
                         </Bar>
@@ -286,7 +297,6 @@ const Result = () => {
                 </ResponsiveContainer>
             </div>
         </div>
-
       </div>
       )}
     </div>
