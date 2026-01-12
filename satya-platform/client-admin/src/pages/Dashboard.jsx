@@ -4,20 +4,21 @@ import {
   BarChart,
   Bar,
   XAxis,
-  YAxis,
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
   PieChart,
   Pie,
   Cell,
+  LabelList // ✅ Kept this fix so cost labels appear
 } from 'recharts';
+
+// ✅ Reverted to your original local images
 import heroImg from '../assets/hero.jpg';
 import registerImg from '../assets/register.jpg';
 import updateImg from '../assets/update.jpg';
+
 import {
-  Globe,
-  ArrowRight,
   UserPlus,
   MapPin,
   FileText,
@@ -26,8 +27,8 @@ import {
   Boxes,
   Earth,
   TrendingUp,
-  PieChart as PieChartIcon,
   IndianRupee,
+  ArrowRight
 } from 'lucide-react';
 
 // --- DATA FOR GRAPHS ---
@@ -39,10 +40,10 @@ const expenditureData = [
   { year: '2024', cost: 135000, label: '₹1.35L' },
 ];
 
-// Source: ECI Voter Turnout Data
+// Source: ECI Voter Turnout Data 2024 (Official: 65.79%)
 const voterTurnoutData = [
-  { name: 'Voted', value: 67, color: '#0ea5e9' }, // Sky-500
-  { name: 'Missing/Unable', value: 33, color: '#e2e8f0' }, // Slate-200
+  { name: 'Voted', value: 65.8, color: '#0ea5e9' }, // Sky-500
+  { name: 'Missing/Unable', value: 34.2, color: '#e2e8f0' }, // Slate-200
 ];
 
 const Dashboard = () => {
@@ -147,7 +148,7 @@ const Dashboard = () => {
             
             <div className="h-48 w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={expenditureData}>
+                <BarChart data={expenditureData} margin={{ top: 20, right: 0, left: 0, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} />
                   <XAxis dataKey="year" axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#64748b'}} />
                   <Tooltip 
@@ -155,6 +156,14 @@ const Dashboard = () => {
                     contentStyle={{borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}}
                   />
                   <Bar dataKey="cost" radius={[4, 4, 0, 0]}>
+                    {/* ✅ Correctly using LabelList to show values on top */}
+                    <LabelList 
+                        dataKey="label" 
+                        position="top" 
+                        fill="#64748b" 
+                        fontSize={12} 
+                        fontWeight="bold" 
+                    />
                     {expenditureData.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={index === 2 ? '#2563eb' : '#cbd5e1'} />
                     ))}
@@ -167,10 +176,10 @@ const Dashboard = () => {
             </p>
           </div>
 
-          {/* GRAPH 2: VOTER TURNOUT */}
+          {/* GRAPH 2: VOTER TURNOUT (2024 Data) */}
           <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-lg shadow-slate-200/50 flex flex-col">
-            <h3 className="text-lg font-bold text-slate-800 mb-1">The 300 Million Gap</h3>
-            <p className="text-sm text-slate-500 mb-6">2019 Voter Turnout Analysis</p>
+            <h3 className="text-lg font-bold text-slate-800 mb-1">The 34% Gap</h3>
+            <p className="text-sm text-slate-500 mb-6">2024 Voter Turnout Analysis</p>
             
             <div className="h-48 w-full relative">
                <ResponsiveContainer width="100%" height="100%">
@@ -194,7 +203,7 @@ const Dashboard = () => {
               {/* Centered Text */}
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                 <div className="text-center">
-                  <span className="block text-2xl font-bold text-slate-800">67%</span>
+                  <span className="block text-2xl font-bold text-slate-800">65.8%</span>
                   <span className="text-[10px] uppercase text-slate-500 font-bold">Turnout</span>
                 </div>
               </div>
