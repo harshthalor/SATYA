@@ -1,5 +1,17 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+} from 'recharts';
 import heroImg from '../assets/hero.jpg';
 import registerImg from '../assets/register.jpg';
 import updateImg from '../assets/update.jpg';
@@ -10,24 +22,40 @@ import {
   MapPin,
   FileText,
   Server,
-  CheckCircle2,
   Lock,
-  Image as ImageIcon,
   Boxes,
-  Earth
+  Earth,
+  TrendingUp,
+  PieChart as PieChartIcon,
+  IndianRupee,
 } from 'lucide-react';
+
+// --- DATA FOR GRAPHS ---
+
+// Source: Centre for Media Studies (CMS) & ECI
+const expenditureData = [
+  { year: '2014', cost: 30000, label: '₹30k' },
+  { year: '2019', cost: 60000, label: '₹60k' },
+  { year: '2024', cost: 135000, label: '₹1.35L' },
+];
+
+// Source: ECI Voter Turnout Data
+const voterTurnoutData = [
+  { name: 'Voted', value: 67, color: '#0ea5e9' }, // Sky-500
+  { name: 'Missing/Unable', value: 33, color: '#e2e8f0' }, // Slate-200
+];
 
 const Dashboard = () => {
   return (
-    <div className="w-full relative">
+    <div className="w-full relative overflow-hidden">
 
       {/* --- SOFT BACKGROUND ACCENT --- */}
       <div className="absolute -top-20 right-0 w-[500px] h-[500px] bg-sky-300/30 rounded-full blur-3xl -z-10"></div>
       <div className="absolute top-40 left-[-100px] w-[300px] h-[300px] bg-sky-200/40 rounded-full blur-3xl -z-10"></div>
 
       {/* ================= HERO SECTION ================= */}
-      <div className="grid md:grid-cols-2 gap-12 items-center mb-20">
-
+      <div className="grid md:grid-cols-2 gap-12 items-center mb-20 px-4 md:px-0">
+        
         {/* LEFT CONTENT */}
         <div className="space-y-6">
           <div className="inline-flex items-center gap-2 px-3 py-1 bg-sky-50 border border-sky-200 text-sky-700 text-xs font-bold rounded-full uppercase tracking-widest shadow-sm">
@@ -35,7 +63,6 @@ const Dashboard = () => {
           </div>
 
           <h1 className="text-4xl md:text-5xl font-extrabold leading-tight text-slate-900">
-            {/* Both lines now match the primary text color */}
             One Nation.<br />
             One Identity.
           </h1>
@@ -64,7 +91,6 @@ const Dashboard = () => {
 
         {/* RIGHT – HERO IMAGE SPACE */}
         <div className="flex justify-center md:justify-end">
-          
           <div className="w-full max-w-md rounded-3xl overflow-hidden shadow-2xl shadow-sky-900/10 border-4 border-white">
             <img 
               src={heroImg} 
@@ -72,51 +98,149 @@ const Dashboard = () => {
               className="w-full h-full object-cover"
             />
           </div>
-
         </div>
       </div>
 
-      {/* ================= STATS SECTION ================= */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-20">
-        
-        <div className="bg-white p-6 rounded-2xl border border-sky-100 shadow-sm hover:border-sky-300 transition">
-          <Server className="text-sky-600 mb-3 h-8 w-8" />
+      {/* ================= STATS GRID ================= */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-24 px-4 md:px-0">
+        <div className="bg-white p-6 rounded-2xl border border-sky-100 shadow-sm hover:border-sky-300 transition group">
+          <Server className="text-sky-600 mb-3 h-8 w-8 group-hover:scale-110 transition-transform" />
           <p className="text-3xl font-bold text-slate-900">Secure</p>
-          <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-            Database Storage
-          </p>
+          <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Database Storage</p>
         </div>
 
-        <div className="bg-white p-6 rounded-2xl border border-sky-100 shadow-sm hover:border-sky-300 transition">
-          <Lock className="text-sky-600 mb-3 h-8 w-8" />
+        <div className="bg-white p-6 rounded-2xl border border-sky-100 shadow-sm hover:border-sky-300 transition group">
+          <Lock className="text-sky-600 mb-3 h-8 w-8 group-hover:scale-110 transition-transform" />
           <p className="text-xl font-bold text-slate-900">AES-256</p>
-          <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-            Encryption Standard
-          </p>
+          <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Encryption Standard</p>
         </div>
 
-        <div className="bg-white p-6 rounded-2xl border border-sky-100 shadow-sm hover:border-sky-300 transition">
-          <Server className="text-sky-600 mb-3 h-8 w-8" />
+        <div className="bg-white p-6 rounded-2xl border border-sky-100 shadow-sm hover:border-sky-300 transition group">
+          <Server className="text-sky-600 mb-3 h-8 w-8 group-hover:scale-110 transition-transform" />
           <p className="text-xl font-bold text-slate-900">Apache Kafka</p>
-          <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-            Real-time Syncing
-          </p>
+          <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Real-time Syncing</p>
         </div>
 
-        <div className="bg-white p-6 rounded-2xl border border-sky-100 shadow-sm hover:border-sky-300 transition">
-          <div>
-            <Boxes className="text-sky-600 mb-3 h-8 w-8" />
-            <p className="text-xl font-bold text-slate-900">Blockchain Ledger</p>
-            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-              Immutable Records
+        <div className="bg-white p-6 rounded-2xl border border-sky-100 shadow-sm hover:border-sky-300 transition group">
+          <Boxes className="text-sky-600 mb-3 h-8 w-8 group-hover:scale-110 transition-transform" />
+          <p className="text-xl font-bold text-slate-900">Blockchain</p>
+          <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Immutable Records</p>
+        </div>
+      </div>
+
+      {/* ================= IMPACT & EFFICIENCY (GRAPHS) ================= */}
+      <div className="mb-24 px-4 md:px-0">
+        <div className="text-center mb-12">
+          <div className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold rounded-full uppercase tracking-widest shadow-sm mb-4">
+             <IndianRupee size={14} /> The Cost of Democracy
+          </div>
+          <h2 className="text-3xl font-extrabold text-slate-900">Why Digital Transformation is Urgent</h2>
+          <p className="text-slate-600 mt-2">Rising costs and stagnating turnout require a structural shift.</p>
+        </div>
+
+        <div className="grid md:grid-cols-3 gap-8">
+
+          {/* GRAPH 1: COST EXPLOSION */}
+          <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-lg shadow-slate-200/50 flex flex-col">
+            <h3 className="text-lg font-bold text-slate-800 mb-1">Election Expenditure</h3>
+            <p className="text-sm text-slate-500 mb-6">Cost of Indian General Elections (Est.)</p>
+            
+            <div className="h-48 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={expenditureData}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                  <XAxis dataKey="year" axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#64748b'}} />
+                  <Tooltip 
+                    cursor={{fill: '#f1f5f9'}}
+                    contentStyle={{borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}}
+                  />
+                  <Bar dataKey="cost" radius={[4, 4, 0, 0]}>
+                    {expenditureData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={index === 2 ? '#2563eb' : '#cbd5e1'} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+            <p className="text-[10px] text-slate-400 mt-auto pt-4 border-t border-slate-100">
+              Source: Centre for Media Studies (CMS) Report
             </p>
           </div>
-        </div>
 
+          {/* GRAPH 2: VOTER TURNOUT */}
+          <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-lg shadow-slate-200/50 flex flex-col">
+            <h3 className="text-lg font-bold text-slate-800 mb-1">The 300 Million Gap</h3>
+            <p className="text-sm text-slate-500 mb-6">2019 Voter Turnout Analysis</p>
+            
+            <div className="h-48 w-full relative">
+               <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={voterTurnoutData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={80}
+                    paddingAngle={5}
+                    dataKey="value"
+                  >
+                    {voterTurnoutData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip contentStyle={{borderRadius: '12px'}} />
+                </PieChart>
+              </ResponsiveContainer>
+              {/* Centered Text */}
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <div className="text-center">
+                  <span className="block text-2xl font-bold text-slate-800">67%</span>
+                  <span className="text-[10px] uppercase text-slate-500 font-bold">Turnout</span>
+                </div>
+              </div>
+            </div>
+            
+            {/* Custom Legend */}
+            <div className="flex justify-center gap-4 mt-2">
+              <div className="flex items-center gap-2 text-xs text-slate-600">
+                <span className="w-2 h-2 rounded-full bg-sky-500"></span> Voted
+              </div>
+              <div className="flex items-center gap-2 text-xs text-slate-600">
+                <span className="w-2 h-2 rounded-full bg-slate-200"></span> Missing
+              </div>
+            </div>
+             <p className="text-[10px] text-slate-400 mt-auto pt-4 border-t border-slate-100">
+              Source: Election Commission of India (ECI)
+            </p>
+          </div>
+
+          {/* STAT CARD: SAVINGS */}
+          <div className="bg-gradient-to-br from-emerald-50 to-white p-6 rounded-3xl border border-emerald-100 shadow-lg shadow-emerald-100/50 flex flex-col">
+            <div className="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center mb-4 text-emerald-600">
+              <TrendingUp size={24} />
+            </div>
+            <h3 className="text-lg font-bold text-slate-800">Projected Savings</h3>
+            <p className="text-sm text-slate-500 mb-6">With ONOE & Digital Infra</p>
+            
+            <div className="my-auto">
+              <span className="text-4xl md:text-5xl font-extrabold text-emerald-500">
+                ₹4,500 Cr
+              </span>
+              <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mt-2">
+                Per Election Cycle
+              </p>
+            </div>
+
+            <p className="text-[10px] text-emerald-800/60 mt-auto pt-4 border-t border-emerald-100">
+              Source: Law Commission Draft Report
+            </p>
+          </div>
+
+        </div>
       </div>
 
       {/* ================= ADMIN MODULES ================= */}
-      <div className="pb-12">
+      <div className="pb-12 px-4 md:px-0">
         <div className="text-center mb-12">
           <h2 className="text-2xl md:text-3xl font-extrabold text-slate-900 mb-2">Administrative Modules</h2>
           <div className="w-12 h-1 bg-sky-500 mx-auto rounded-full mb-3"></div>
@@ -132,8 +256,6 @@ const Dashboard = () => {
             to="/register"
             className="group bg-white p-8 rounded-3xl border border-sky-100 hover:border-sky-400 hover:shadow-xl hover:shadow-sky-200/40 transition duration-300"
           >
-            {/* 👇 IMAGE PLACEHOLDER 👇 */}
-            {/* ✅ REGISTER IMAGE ADDED */}
             <div className="w-full h-48 rounded-2xl mb-6 overflow-hidden shadow-sm border border-slate-200 group-hover:shadow-md transition-all">
                <img 
                  src={registerImg} 
@@ -141,7 +263,6 @@ const Dashboard = () => {
                  className="w-full h-full object-cover" 
                />
             </div>
-            {/* 👆 END PLACEHOLDER 👆 */}
 
             <div className="flex items-start justify-between">
               <div>
@@ -167,8 +288,6 @@ const Dashboard = () => {
             to="/update"
             className="group bg-white p-8 rounded-3xl border border-sky-100 hover:border-sky-400 hover:shadow-xl hover:shadow-sky-200/40 transition duration-300"
           >
-             {/* 👇 IMAGE PLACEHOLDER 👇 */}
-             {/* ✅ UPDATE IMAGE ADDED */}
             <div className="w-full h-48 rounded-2xl mb-6 overflow-hidden shadow-sm border border-slate-200 group-hover:shadow-md transition-all">
                <img 
                  src={updateImg} 
@@ -176,7 +295,6 @@ const Dashboard = () => {
                  className="w-full h-full object-cover" 
                />
             </div>
-            {/* 👆 END PLACEHOLDER 👆 */}
 
             <div className="flex items-start justify-between">
               <div>
